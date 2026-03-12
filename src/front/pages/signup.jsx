@@ -6,6 +6,7 @@ export const Signup = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [role, setRole] = useState("user");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -22,7 +23,7 @@ export const Signup = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password, role })
             });
 
             let data = {};
@@ -79,6 +80,18 @@ export const Signup = () => {
                                         minLength={6}
                                         required
                                     />
+                                </div>
+
+                                <div className="mb-3">
+                                    <label className="form-label">Tipo de cuenta</label>
+                                    <select
+                                        className="form-select"
+                                        value={role}
+                                        onChange={(e) => setRole(e.target.value)}
+                                    >
+                                        <option value="user">Usuario</option>
+                                        <option value="trainer">Entrenador</option>
+                                    </select>
                                 </div>
 
                                 <button type="submit" className="btn btn-primary w-100" disabled={loading}>

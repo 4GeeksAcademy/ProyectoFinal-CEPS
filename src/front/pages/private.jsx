@@ -1,76 +1,33 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 
 export const Private = () => {
-    const navigate = useNavigate();
-    const [message, setMessage] = useState("");
-    const [user, setUser] = useState(null);
-    const [error, setError] = useState("");
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    useEffect(() => {
-        const fetchPrivate = async () => {
-            const token = localStorage.getItem("token");
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-            if (!token) {
-                navigate("/login");
-                return;
-            }
-
-            try {
-                const response = await fetch(`${backendUrl}/api/private`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.msg || "No autorizado");
-                }
-
-                setMessage(data.msg);
-                setUser(data.user);
-
-            } catch (error) {
-                setError(error.message);
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
-                navigate("/login");
-            }
-        };
-
-        fetchPrivate();
-    }, [navigate]);
-
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login");
-    };
+    if (!user) {
+        return (
+            <div className="container mt-5">
+                <div className="alert alert-danger">Debes iniciar sesión.</div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mt-5">
-            <div className="card">
-                <div className="card-header d-flex justify-content-between align-items-center">
-                    <h3>Ruta Privada</h3>
-                    <button className="btn btn-danger" onClick={handleLogout}>
-                        Logout
-                    </button>
-                </div>
-                <div className="card-body">
-                    {error && <div className="alert alert-danger">{error}</div>}
-                    {message && <div className="alert alert-success">{message}</div>}
-                    {user && (
-                        <div>
-                            <p><strong>ID:</strong> {user.id}</p>
-                            <p><strong>Email:</strong> {user.email}</p>
-                        </div>
-                    )}
-                </div>
+            <h1>Bienvenido</h1>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Rol:</strong> {user.role}</p>
+
+            <div className="mt-4">
+                <Link to="/classes" className="btn btn-outline-primary me-2">Ver clases</Link>
+                <Link to="/routines" className="btn btn-outline-success me-2">Ver rutinas</Link>
+
+                {user.role === "trainer" && (
+                    <>
+                        <Link to="/create-class" className="btn btn-primary me-2">Crear clase</Link>
+                        <Link to="/create-routine" className="btn btn-success">Crear rutina</Link>
+                    </>
+                )}
             </div>
         </div>
     );
