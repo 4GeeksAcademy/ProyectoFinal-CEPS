@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-from api.models import db, User, GymClass, Routine
+from api.models import db, User, GymClass, Routine, Favorites_Routines
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
@@ -227,8 +227,48 @@ def my_routines():
     return jsonify([routine.serialize() for routine in routines]), 200
 
 #---Como usuario deportista, yo puedo eliminar rutinas de favoritos para mantener mi lista actualizada y relevante.
+# Como usuario deportista, puedo agregar una rutina a mis favoritos.
+@api.route('/favorites_routines/<int:routine_id>', methods = ["POST"])
+@jwt_required()
+def add_favotites(routine_id):
+  current_user = get_current_user()
 
-@api.route('/routines/<int:routine_id>', methods = ['DELETE'])
+  if not current_user:
+    return jsonify({"msg":"Usuario no encontrado"}),404
+
+  if current_user.role != "user":
+    return jsonify({"msg":"Solo los usuarios pueden agregar rutinas a favoritos"}),403
+
+  routine = Routine.query.get(routine_id)
+
+  if not routine:
+    return jsonify({"msg":"Rutina no encontrada"}),404
+
+  #evitar duplicados de la rutina si ya esta en Favorites_Routines
+
+  if Favorites_Routines.query.filter_by(user_id=current_user.id, routine_id=routine_id).first():
+    return jsonify({"msg":"Rutina ya agregada a favoritos"}),400
+
+  new_routine = Favorites_Routines(
+    user_id=current_user.id,
+    routine_id=routine_id
+  )
+
+  try:
+    db.session.add(new_routine)
+    db.session.commit()
+    return jsonify({
+      "msg":"Rutina agregada a favoritos exitosamente",
+      "routine":new_routine.serialize()
+    }),201
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({
+      "msg":"Error al agregar rutina a favoritos",
+      "error":str(e)
+    }),500
+
+@api.route('/favorites_routines/<int:routine_id>', methods = ['DELETE'])
 @jwt_required()
 def delete_routines(routine_id):
   current_user = get_current_user()
@@ -240,14 +280,14 @@ def delete_routines(routine_id):
     return jsonify({"msg":"Solo los usuarios pueden eliminar rutinas"}),403
 
   #consulta si la rutina existe en la base de datos
-  routine = Routine.query.get(routine_id)
+  favorite = Favorites_Routines.query.filter_by(user_id=current_user.id, routine_id=routine_id).first()
 
   #si la rutina no existe, retorna un error 404
-  if not routine:
-    return jsonify({"msg":"Rutina no encontrada"}),404
+  if not favorite:
+    return jsonify({"msg":"No tienes esta rutina agregada a favoritos"}),404
   #Si existe elimina la rutina
   try:  
-    db.session.delete(routine)
+    db.session.delete(favorite)
     #confirma la eliminacion en la base de datos
     db.session.commit()
     #retorna un mensaje de exito y el estado 200
@@ -255,3 +295,17 @@ def delete_routines(routine_id):
   except Exception as e:
     db.session.rollback()
     return jsonify({"msg":"Error al eliminar la rutina"}),500
+
+@api.route('/favorites_routines', methods = ['GET'])
+@jwt_required()
+def get_favorites_routines():
+  current_user = get_current_user()
+
+  if not current_user:
+    return jsonify({"msg":"Usuario no encontrado"}),404
+
+  if current_user.role != "user":
+    return jsonify({"msg":"Solo los usuarios pueden ver sus rutinas favoritas"}),403
+
+  favorites_routines = Favorites_Routines.query.filter_by(user_id=current_user.id).all()
+  return jsonify([favorite.serialize() for favorite in favorites_routines]),200
