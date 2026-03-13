@@ -16,7 +16,6 @@ class User(db.Model):
     is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
     
-
     classes = relationship("GymClass", back_populates="trainer", cascade="all, delete-orphan")
     routines = relationship("Routine", back_populates="trainer", cascade="all, delete-orphan")
 
@@ -33,7 +32,7 @@ class User(db.Model):
         return cls.query.filter_by(email=email).first()
 
     def set_password(self, password):
-        self.password = bcrypt.generate_password_hash(password).decode("utf-8")
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password, password)

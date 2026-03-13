@@ -225,3 +225,33 @@ def my_routines():
 
     routines = Routine.query.filter_by(trainer_id=current_user.id).all()
     return jsonify([routine.serialize() for routine in routines]), 200
+
+#---Como usuario deportista, yo puedo eliminar rutinas de favoritos para mantener mi lista actualizada y relevante.
+
+@api.route('/routines/<int:routine_id>', methods = ['DELETE'])
+@jwt_required()
+def delete_routines(routine_id):
+  current_user = get_current_user()
+
+  if not current_user:
+    return jsonify({"msg":"Usuario no encontrado"}),404
+
+  if current_user.role != "user":
+    return jsonify({"msg":"Solo los usuarios pueden eliminar rutinas"}),403
+
+  #consulta si la rutina existe en la base de datos
+  routine = Routine.query.get(routine_id)
+
+  #si la rutina no existe, retorna un error 404
+  if not routine:
+    return jsonify({"msg":"Rutina no encontrada"}),404
+  #Si existe elimina la rutina
+  try:  
+    db.session.delete(routine)
+    #confirma la eliminacion en la base de datos
+    db.session.commit()
+    #retorna un mensaje de exito y el estado 200
+    return jsonify({"msg":"Rutina eliminada exitosamente"}),200
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"msg":"Error al eliminar la rutina"}),500
