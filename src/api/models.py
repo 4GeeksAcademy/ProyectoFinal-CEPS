@@ -102,7 +102,7 @@ class Routine(db.Model):
             "trainer_id": self.trainer_id,
             "trainer_email": self.trainer.email if self.trainer else None
         }
-
+## Se agrega un comentario de prueba 
 class Favorites_Routines(db.Model):
     __tablename__ = "favorites_routines"
 
