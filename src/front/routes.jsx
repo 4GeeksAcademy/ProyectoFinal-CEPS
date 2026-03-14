@@ -1,5 +1,5 @@
 import React from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Layout } from "./pages/Layout";
 
 import { Home } from "./pages/Home";
@@ -18,7 +18,7 @@ export const router = createBrowserRouter([
 		children: [
 			{
 				path: "/",
-				element: <Home />
+				element: <Navigate to="/login" replace />
 			},
 			{
 				path: "/signup",
