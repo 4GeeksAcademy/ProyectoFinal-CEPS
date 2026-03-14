@@ -16,9 +16,9 @@ class User(db.Model):
     is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
     
-
     classes = relationship("GymClass", back_populates="trainer", cascade="all, delete-orphan")
     routines = relationship("Routine", back_populates="trainer", cascade="all, delete-orphan")
+    favorites_routines = relationship("Favorites_Routines", back_populates="user", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
@@ -33,7 +33,7 @@ class User(db.Model):
         return cls.query.filter_by(email=email).first()
 
     def set_password(self, password):
-        self.password = bcrypt.generate_password_hash(password).decode("utf-8")
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password, password)
@@ -88,6 +88,7 @@ class Routine(db.Model):
 
     trainer_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     trainer = relationship("User", back_populates="routines")
+    favorites_routines = relationship("Favorites_Routines", back_populates="routine",cascade="all, delete-orphan")
 
     def serialize(self):
         return {
@@ -100,4 +101,21 @@ class Routine(db.Model):
             "exercises": self.exercises,
             "trainer_id": self.trainer_id,
             "trainer_email": self.trainer.email if self.trainer else None
+        }
+## Se agrega un comentario de prueba 
+class Favorites_Routines(db.Model):
+    __tablename__ = "favorites_routines"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    routine_id: Mapped[int] = mapped_column(ForeignKey("routine.id"), nullable=False)
+    user = relationship("User", back_populates="favorites_routines")
+    routine = relationship("Routine", back_populates="favorites_routines")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "routine_id": self.routine_id,
+            "routine_name": self.routine.name if self.routine else None
         }
