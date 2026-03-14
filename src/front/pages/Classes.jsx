@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 export const Classes = () => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -26,7 +27,12 @@ export const Classes = () => {
 
     return (
         <div className="container mt-5">
-            <h2>Clases disponibles</h2>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="mb-0">Clases disponibles</h2>
+                <Link to="/private" className="btn btn-secondary">
+                    Volver al inicio
+                </Link>
+            </div>
             {error && <div className="alert alert-danger">{error}</div>}
 
             <div className="row">
@@ -38,13 +44,12 @@ export const Classes = () => {
                             )}
                             <div className="card-body">
                                 <h5>{item.title}</h5>
-                                <p>{item.description}</p>
                                 <p><strong>Categoría:</strong> {item.category}</p>
                                 <p><strong>Fecha:</strong> {item.date}</p>
-                                <p><strong>Hora:</strong> {item.time}</p>
-                                <p><strong>Duración:</strong> {item.duration} min</p>
-                                <p><strong>Nivel:</strong> {item.level}</p>
                                 <p><strong>Entrenador:</strong> {item.trainer_email}</p>
+                                <Link to={`/classes/${item.id}`} className="btn btn-outline-primary">
+                                    Ver más
+                                </Link>
                             </div>
                         </div>
                     </div>

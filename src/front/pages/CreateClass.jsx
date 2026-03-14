@@ -91,6 +91,9 @@ export const CreateClass = () => {
                 <button className="btn btn-primary" disabled={loading}>
                     {loading ? "Creando..." : "Crear clase"}
                 </button>
+                <button type="button" className="btn btn-secondary mx-3" disabled={loading} onClick={() => navigate("/private")}>
+                    Cancelar
+                </button>
             </form>
         </div>
     );
