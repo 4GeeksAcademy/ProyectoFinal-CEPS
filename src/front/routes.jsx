@@ -9,7 +9,9 @@ import { Private } from "./pages/private";
 import { CreateClass } from "./pages/CreateClass";
 import { CreateRoutine } from "./pages/CreateRoutine";
 import { Classes } from "./pages/Classes";
+import { ClassDetails } from "./pages/ClassDetails";
 import { Routines } from "./pages/Routines";
+import { RoutineDetails } from "./pages/RoutineDetails";
 
 export const router = createBrowserRouter([
 	{
@@ -45,8 +47,16 @@ export const router = createBrowserRouter([
 				element: <Classes />
 			},
 			{
+				path: "/classes/:id",
+				element: <ClassDetails />
+			},
+			{
 				path: "/routines",
 				element: <Routines />
+			},
+			{
+				path: "/routines/:id",
+				element: <RoutineDetails />
 			}
 		]
 	}

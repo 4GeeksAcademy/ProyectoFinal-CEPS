@@ -6,6 +6,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 api = Blueprint('api', __name__)
 CORS(api)
 
+
 def get_current_user():
     user_id = get_jwt_identity()
     return User.query.get(int(user_id))
@@ -117,7 +118,8 @@ def create_class():
     if not body:
         return jsonify({"msg": "Body vacío"}), 400
 
-    required_fields = ["title", "description", "category", "date", "time", "duration", "capacity", "level"]
+    required_fields = ["title", "description", "category",
+                       "date", "time", "duration", "capacity", "level"]
     for field in required_fields:
         if not body.get(field):
             return jsonify({"msg": f"El campo '{field}' es requerido"}), 400
@@ -151,6 +153,16 @@ def get_classes():
     return jsonify([gym_class.serialize() for gym_class in classes]), 200
 
 
+@api.route('/classes/<int:class_id>', methods=['GET'])
+def get_class(class_id):
+    gym_class = GymClass.query.get(class_id)
+
+    if not gym_class:
+        return jsonify({"msg": "Clase no encontrada"}), 404
+
+    return jsonify(gym_class.serialize()), 200
+
+
 @api.route('/routines', methods=['POST'])
 @jwt_required()
 def create_routine():
@@ -167,7 +179,8 @@ def create_routine():
     if not body:
         return jsonify({"msg": "Body vacío"}), 400
 
-    required_fields = ["name", "description", "goal", "level", "estimated_time", "exercises"]
+    required_fields = ["name", "description", "goal",
+                       "level", "estimated_time", "exercises"]
     for field in required_fields:
         if not body.get(field):
             return jsonify({"msg": f"El campo '{field}' es requerido"}), 400
@@ -195,6 +208,16 @@ def create_routine():
 def get_routines():
     routines = Routine.query.all()
     return jsonify([routine.serialize() for routine in routines]), 200
+
+
+@api.route('/routines/<int:routine_id>', methods=['GET'])
+def get_routine(routine_id):
+    routine = Routine.query.get(routine_id)
+
+    if not routine:
+        return jsonify({"msg": "Rutina no encontrada"}), 404
+
+    return jsonify(routine.serialize()), 200
 
 
 @api.route('/my-classes', methods=['GET'])
@@ -226,86 +249,92 @@ def my_routines():
     routines = Routine.query.filter_by(trainer_id=current_user.id).all()
     return jsonify([routine.serialize() for routine in routines]), 200
 
-#---Como usuario deportista, yo puedo eliminar rutinas de favoritos para mantener mi lista actualizada y relevante.
+# ---Como usuario deportista, yo puedo eliminar rutinas de favoritos para mantener mi lista actualizada y relevante.
 # Como usuario deportista, puedo agregar una rutina a mis favoritos.
-@api.route('/favorites_routines/<int:routine_id>', methods = ["POST"])
+
+
+@api.route('/favorites_routines/<int:routine_id>', methods=["POST"])
 @jwt_required()
 def add_favotites(routine_id):
-  current_user = get_current_user()
+    current_user = get_current_user()
 
-  if not current_user:
-    return jsonify({"msg":"Usuario no encontrado"}),404
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
 
-  if current_user.role != "user":
-    return jsonify({"msg":"Solo los usuarios pueden agregar rutinas a favoritos"}),403
+    if current_user.role != "user":
+        return jsonify({"msg": "Solo los usuarios pueden agregar rutinas a favoritos"}), 403
 
-  routine = Routine.query.get(routine_id)
+    routine = Routine.query.get(routine_id)
 
-  if not routine:
-    return jsonify({"msg":"Rutina no encontrada"}),404
+    if not routine:
+        return jsonify({"msg": "Rutina no encontrada"}), 404
 
-  #evitar duplicados de la rutina si ya esta en Favorites_Routines
+    # evitar duplicados de la rutina si ya esta en Favorites_Routines
 
-  if Favorites_Routines.query.filter_by(user_id=current_user.id, routine_id=routine_id).first():
-    return jsonify({"msg":"Rutina ya agregada a favoritos"}),400
+    if Favorites_Routines.query.filter_by(user_id=current_user.id, routine_id=routine_id).first():
+        return jsonify({"msg": "Rutina ya agregada a favoritos"}), 400
 
-  new_routine = Favorites_Routines(
-    user_id=current_user.id,
-    routine_id=routine_id
-  )
+    new_routine = Favorites_Routines(
+        user_id=current_user.id,
+        routine_id=routine_id
+    )
 
-  try:
-    db.session.add(new_routine)
-    db.session.commit()
-    return jsonify({
-      "msg":"Rutina agregada a favoritos exitosamente",
-      "routine":new_routine.serialize()
-    }),201
-  except Exception as e:
-    db.session.rollback()
-    return jsonify({
-      "msg":"Error al agregar rutina a favoritos",
-      "error":str(e)
-    }),500
+    try:
+        db.session.add(new_routine)
+        db.session.commit()
+        return jsonify({
+            "msg": "Rutina agregada a favoritos exitosamente",
+            "routine": new_routine.serialize()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "msg": "Error al agregar rutina a favoritos",
+            "error": str(e)
+        }), 500
 
-@api.route('/favorites_routines/<int:routine_id>', methods = ['DELETE'])
+
+@api.route('/favorites_routines/<int:routine_id>', methods=['DELETE'])
 @jwt_required()
 def delete_routines(routine_id):
-  current_user = get_current_user()
+    current_user = get_current_user()
 
-  if not current_user:
-    return jsonify({"msg":"Usuario no encontrado"}),404
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
 
-  if current_user.role != "user":
-    return jsonify({"msg":"Solo los usuarios pueden eliminar rutinas"}),403
+    if current_user.role != "user":
+        return jsonify({"msg": "Solo los usuarios pueden eliminar rutinas"}), 403
 
-  #consulta si la rutina existe en la base de datos
-  favorite = Favorites_Routines.query.filter_by(user_id=current_user.id, routine_id=routine_id).first()
+    # consulta si la rutina existe en la base de datos
+    favorite = Favorites_Routines.query.filter_by(
+        user_id=current_user.id, routine_id=routine_id).first()
 
-  #si la rutina no existe, retorna un error 404
-  if not favorite:
-    return jsonify({"msg":"No tienes esta rutina agregada a favoritos"}),404
-  #Si existe elimina la rutina
-  try:  
-    db.session.delete(favorite)
-    #confirma la eliminacion en la base de datos
-    db.session.commit()
-    #retorna un mensaje de exito y el estado 200
-    return jsonify({"msg":"Rutina eliminada exitosamente"}),200
-  except Exception as e:
-    db.session.rollback()
-    return jsonify({"msg":"Error al eliminar la rutina"}),500
+    # si la rutina no existe, retorna un error 404
+    if not favorite:
+        return jsonify({"msg": "No tienes esta rutina agregada a favoritos"}), 404
+    # Si existe elimina la rutina
+    try:
+        db.session.delete(favorite)
+        # confirma la eliminacion en la base de datos
+        db.session.commit()
+        # retorna un mensaje de exito y el estado 200
+        return jsonify({"msg": "Rutina eliminada exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al eliminar la rutina"}), 500
 
-@api.route('/favorites_routines', methods = ['GET'])
+
+@api.route('/favorites_routines', methods=['GET'])
 @jwt_required()
 def get_favorites_routines():
-  current_user = get_current_user()
+    current_user = get_current_user()
 
-  if not current_user:
-    return jsonify({"msg":"Usuario no encontrado"}),404
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
 
-  if current_user.role != "user":
-    return jsonify({"msg":"Solo los usuarios pueden ver sus rutinas favoritas"}),403
+    if current_user.role != "user":
+        return jsonify({"msg": "Solo los usuarios pueden ver sus rutinas favoritas"}), 403
 
-  favorites_routines = Favorites_Routines.query.filter_by(user_id=current_user.id).all()
-  return jsonify([favorite.serialize() for favorite in favorites_routines]),200
+    favorites_routines = Favorites_Routines.query.filter_by(
+        user_id=current_user.id).all()
+    return jsonify([favorite.serialize() for favorite in favorites_routines]), 200
