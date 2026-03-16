@@ -45,7 +45,7 @@ export const Routines = () => {
                                 <p><strong>Nivel:</strong> {item.level}</p>
                                 <p><strong>Entrenador:</strong> {item.trainer_email}</p>
                                 <Link to={`/routines/${item.id}`} className="btn btn-outline-primary">
-                                    Ver más
+                                    Ver detalles
                                 </Link>
                             </div>
                         </div>

@@ -48,7 +48,7 @@ export const Classes = () => {
                                 <p><strong>Fecha:</strong> {item.date}</p>
                                 <p><strong>Entrenador:</strong> {item.trainer_email}</p>
                                 <Link to={`/classes/${item.id}`} className="btn btn-outline-primary">
-                                    Ver más
+                                    Ver detalles
                                 </Link>
                             </div>
                         </div>

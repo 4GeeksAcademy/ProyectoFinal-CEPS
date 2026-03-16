@@ -107,7 +107,7 @@ export const ClassDetails = () => {
             </div>
 
             <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
-                Volver
+                Volver a clases
             </button>
         </div>
     );

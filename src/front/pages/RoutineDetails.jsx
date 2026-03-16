@@ -90,7 +90,7 @@ export const RoutineDetails = () => {
             </div>
 
             <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
-                Volver
+                Volver a rutinas
             </button>
         </div>
     );
