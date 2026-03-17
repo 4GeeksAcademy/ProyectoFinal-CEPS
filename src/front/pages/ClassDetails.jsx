@@ -13,6 +13,8 @@ export const ClassDetails = () => {
     useEffect(() => {
         const fetchClass = async () => {
             try {
+                setLoading(true);
+
                 const response = await fetch(`${backendUrl}/api/classes/${id}`);
                 const data = await response.json();
 
@@ -33,8 +35,11 @@ export const ClassDetails = () => {
 
     if (loading) {
         return (
-            <div className="container mt-5">
-                <div className="alert alert-info">Cargando clase...</div>
+            <div className="container mt-5 text-center">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                </div>
+                <p className="mt-3">Cargando clase...</p>
             </div>
         );
     }
@@ -63,7 +68,9 @@ export const ClassDetails = () => {
 
     return (
         <div className="container mt-5">
+
             <h2>{gymClass.title}</h2>
+
             {gymClass.image_url && (
                 <img
                     src={gymClass.image_url}
@@ -77,38 +84,27 @@ export const ClassDetails = () => {
 
             <div className="row">
                 <div className="col-md-6">
-                    <p>
-                        <strong>Categoría:</strong> {gymClass.category}
-                    </p>
-                    <p>
-                        <strong>Fecha:</strong> {gymClass.date}
-                    </p>
-                    <p>
-                        <strong>Hora:</strong> {gymClass.time}
-                    </p>
-                    <p>
-                        <strong>Duración:</strong> {gymClass.duration} min
-                    </p>
-                    <p>
-                        <strong>Capacidad:</strong> {gymClass.capacity}
-                    </p>
+                    <p><strong>Categoría:</strong> {gymClass.category}</p>
+                    <p><strong>Fecha:</strong> {gymClass.date}</p>
+                    <p><strong>Hora:</strong> {gymClass.time}</p>
+                    <p><strong>Duración:</strong> {gymClass.duration} min</p>
+                    <p><strong>Capacidad:</strong> {gymClass.capacity}</p>
                 </div>
+
                 <div className="col-md-6">
-                    <p>
-                        <strong>Nivel:</strong> {gymClass.level}
-                    </p>
-                    <p>
-                        <strong>Ubicación:</strong> {gymClass.location || "No especificado"}
-                    </p>
-                    <p>
-                        <strong>Entrenador:</strong> {gymClass.trainer_email || "No disponible"}
-                    </p>
+                    <p><strong>Nivel:</strong> {gymClass.level}</p>
+                    <p><strong>Ubicación:</strong> {gymClass.location || "No especificado"}</p>
+                    <p><strong>Entrenador:</strong> {gymClass.trainer_email || "No disponible"}</p>
                 </div>
             </div>
 
-            <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
+            <button
+                className="btn btn-secondary mt-4"
+                onClick={() => navigate(-1)}
+            >
                 Volver a clases
             </button>
+
         </div>
     );
 };
