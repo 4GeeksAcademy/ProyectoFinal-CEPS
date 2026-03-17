@@ -3,7 +3,7 @@ from api.models import db, User, GymClass, Routine, Favorites_Routines
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-api = Blueprint('api', __name__)
+api = Blueprint("api", __name__)
 CORS(api)
 
 
@@ -12,7 +12,7 @@ def get_current_user():
     return User.query.get(int(user_id))
 
 
-@api.route('/hello', methods=['POST', 'GET'])
+@api.route("/hello", methods=["POST", "GET"])
 def handle_hello():
     response_body = {
         "message": "Hello! I'm a message that came from the backend, check the network tab on the google inspector and you will see the GET request"
@@ -20,7 +20,7 @@ def handle_hello():
     return jsonify(response_body), 200
 
 
-@api.route('/signup', methods=['POST'])
+@api.route("/signup", methods=["POST"])
 def signup():
     body = request.get_json()
 
@@ -60,7 +60,7 @@ def signup():
     }), 201
 
 
-@api.route('/login', methods=['POST'])
+@api.route("/login", methods=["POST"])
 def login():
     body = request.get_json()
 
@@ -87,7 +87,7 @@ def login():
     }), 200
 
 
-@api.route('/private', methods=['GET'])
+@api.route("/private", methods=["GET"])
 @jwt_required()
 def private():
     user_id = get_jwt_identity()
@@ -102,7 +102,7 @@ def private():
     }), 200
 
 
-@api.route('/classes', methods=['POST'])
+@api.route("/classes", methods=["POST"])
 @jwt_required()
 def create_class():
     current_user = get_current_user()
@@ -118,8 +118,11 @@ def create_class():
     if not body:
         return jsonify({"msg": "Body vacío"}), 400
 
-    required_fields = ["title", "description", "category",
-                       "date", "time", "duration", "capacity", "level"]
+    required_fields = [
+        "title", "description", "category",
+        "date", "time", "duration", "capacity", "level"
+    ]
+
     for field in required_fields:
         if not body.get(field):
             return jsonify({"msg": f"El campo '{field}' es requerido"}), 400
@@ -147,13 +150,13 @@ def create_class():
     }), 201
 
 
-@api.route('/classes', methods=['GET'])
+@api.route("/classes", methods=["GET"])
 def get_classes():
     classes = GymClass.query.all()
     return jsonify([gym_class.serialize() for gym_class in classes]), 200
 
 
-@api.route('/classes/<int:class_id>', methods=['GET'])
+@api.route("/classes/<int:class_id>", methods=["GET"])
 def get_class(class_id):
     gym_class = GymClass.query.get(class_id)
 
@@ -163,7 +166,7 @@ def get_class(class_id):
     return jsonify(gym_class.serialize()), 200
 
 
-@api.route('/routines', methods=['POST'])
+@api.route("/routines", methods=["POST"])
 @jwt_required()
 def create_routine():
     current_user = get_current_user()
@@ -179,8 +182,11 @@ def create_routine():
     if not body:
         return jsonify({"msg": "Body vacío"}), 400
 
-    required_fields = ["name", "description", "goal",
-                       "level", "estimated_time", "exercises"]
+    required_fields = [
+        "name", "description", "goal",
+        "level", "estimated_time", "exercises", "muscle_group"
+    ]
+
     for field in required_fields:
         if not body.get(field):
             return jsonify({"msg": f"El campo '{field}' es requerido"}), 400
@@ -192,6 +198,7 @@ def create_routine():
         level=body.get("level"),
         estimated_time=int(body.get("estimated_time")),
         exercises=body.get("exercises"),
+        muscle_group=body.get("muscle_group"),
         trainer_id=current_user.id
     )
 
@@ -204,13 +211,13 @@ def create_routine():
     }), 201
 
 
-@api.route('/routines', methods=['GET'])
+@api.route("/routines", methods=["GET"])
 def get_routines():
     routines = Routine.query.all()
     return jsonify([routine.serialize() for routine in routines]), 200
 
 
-@api.route('/routines/<int:routine_id>', methods=['GET'])
+@api.route("/routines/<int:routine_id>", methods=["GET"])
 def get_routine(routine_id):
     routine = Routine.query.get(routine_id)
 
@@ -220,7 +227,7 @@ def get_routine(routine_id):
     return jsonify(routine.serialize()), 200
 
 
-@api.route('/my-classes', methods=['GET'])
+@api.route("/my-classes", methods=["GET"])
 @jwt_required()
 def my_classes():
     current_user = get_current_user()
@@ -235,7 +242,7 @@ def my_classes():
     return jsonify([gym_class.serialize() for gym_class in classes]), 200
 
 
-@api.route('/my-routines', methods=['GET'])
+@api.route("/my-routines", methods=["GET"])
 @jwt_required()
 def my_routines():
     current_user = get_current_user()
@@ -249,11 +256,8 @@ def my_routines():
     routines = Routine.query.filter_by(trainer_id=current_user.id).all()
     return jsonify([routine.serialize() for routine in routines]), 200
 
-# ---Como usuario deportista, yo puedo eliminar rutinas de favoritos para mantener mi lista actualizada y relevante.
-# Como usuario deportista, puedo agregar una rutina a mis favoritos.
 
-
-@api.route('/favorites_routines/<int:routine_id>', methods=["POST"])
+@api.route("/favorites_routines/<int:routine_id>", methods=["POST"])
 @jwt_required()
 def add_favotites(routine_id):
     current_user = get_current_user()
@@ -268,8 +272,6 @@ def add_favotites(routine_id):
 
     if not routine:
         return jsonify({"msg": "Rutina no encontrada"}), 404
-
-    # evitar duplicados de la rutina si ya esta en Favorites_Routines
 
     if Favorites_Routines.query.filter_by(user_id=current_user.id, routine_id=routine_id).first():
         return jsonify({"msg": "Rutina ya agregada a favoritos"}), 400
@@ -294,7 +296,7 @@ def add_favotites(routine_id):
         }), 500
 
 
-@api.route('/favorites_routines/<int:routine_id>', methods=['DELETE'])
+@api.route("/favorites_routines/<int:routine_id>", methods=["DELETE"])
 @jwt_required()
 def delete_routines(routine_id):
     current_user = get_current_user()
@@ -305,26 +307,24 @@ def delete_routines(routine_id):
     if current_user.role != "user":
         return jsonify({"msg": "Solo los usuarios pueden eliminar rutinas"}), 403
 
-    # consulta si la rutina existe en la base de datos
     favorite = Favorites_Routines.query.filter_by(
-        user_id=current_user.id, routine_id=routine_id).first()
+        user_id=current_user.id,
+        routine_id=routine_id
+    ).first()
 
-    # si la rutina no existe, retorna un error 404
     if not favorite:
         return jsonify({"msg": "No tienes esta rutina agregada a favoritos"}), 404
-    # Si existe elimina la rutina
+
     try:
         db.session.delete(favorite)
-        # confirma la eliminacion en la base de datos
         db.session.commit()
-        # retorna un mensaje de exito y el estado 200
         return jsonify({"msg": "Rutina eliminada exitosamente"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Error al eliminar la rutina"}), 500
 
 
-@api.route('/favorites_routines', methods=['GET'])
+@api.route("/favorites_routines", methods=["GET"])
 @jwt_required()
 def get_favorites_routines():
     current_user = get_current_user()
@@ -336,5 +336,7 @@ def get_favorites_routines():
         return jsonify({"msg": "Solo los usuarios pueden ver sus rutinas favoritas"}), 403
 
     favorites_routines = Favorites_Routines.query.filter_by(
-        user_id=current_user.id).all()
+        user_id=current_user.id
+    ).all()
+
     return jsonify([favorite.serialize() for favorite in favorites_routines]), 200
