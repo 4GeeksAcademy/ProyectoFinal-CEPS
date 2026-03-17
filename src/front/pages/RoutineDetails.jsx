@@ -13,6 +13,8 @@ export const RoutineDetails = () => {
     useEffect(() => {
         const fetchRoutine = async () => {
             try {
+                setLoading(true);
+
                 const response = await fetch(`${backendUrl}/api/routines/${id}`);
                 const data = await response.json();
 
@@ -33,10 +35,11 @@ export const RoutineDetails = () => {
 
     if (loading) {
         return (
-            <div className="container mt-5">
-                <div className="alert alert-info">
-                    Cargando rutina...
+            <div className="container mt-5 text-center">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
                 </div>
+                <p className="mt-3">Cargando rutina...</p>
             </div>
         );
     }
@@ -77,14 +80,11 @@ export const RoutineDetails = () => {
 
     return (
         <div className="container mt-5">
-
             <h2>{routine.name}</h2>
             <p>{routine.description}</p>
 
             <div className="row mt-4">
-
                 <div className="col-md-6">
-
                     <p>
                         <strong>Objetivo:</strong> {routine.goal}
                     </p>
@@ -102,11 +102,9 @@ export const RoutineDetails = () => {
                         <strong>Tiempo estimado:</strong>{" "}
                         {routine.estimated_time} min
                     </p>
-
                 </div>
 
                 <div className="col-md-6">
-
                     <p>
                         <strong>Ejercicios:</strong>
                     </p>
@@ -119,9 +117,7 @@ export const RoutineDetails = () => {
                         <strong>Entrenador:</strong>{" "}
                         {routine.trainer_email || "No disponible"}
                     </p>
-
                 </div>
-
             </div>
 
             <button
@@ -130,7 +126,6 @@ export const RoutineDetails = () => {
             >
                 Volver a rutinas
             </button>
-
         </div>
     );
 };

@@ -3,12 +3,16 @@ import { Link } from "react-router-dom";
 
 export const Classes = () => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
     const [classes, setClasses] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
         const fetchClasses = async () => {
             try {
+                setLoading(true);
+
                 const response = await fetch(`${backendUrl}/api/classes`);
                 const data = await response.json();
 
@@ -19,11 +23,25 @@ export const Classes = () => {
                 setClasses(data);
             } catch (error) {
                 setError(error.message);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchClasses();
     }, [backendUrl]);
+
+    // Estado de carga
+    if (loading) {
+        return (
+            <div className="container mt-5 text-center">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                </div>
+                <p className="mt-3">Cargando clases...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container mt-5">
@@ -33,24 +51,36 @@ export const Classes = () => {
                     Volver al inicio
                 </Link>
             </div>
+
             {error && <div className="alert alert-danger">{error}</div>}
 
             <div className="row">
                 {classes.map((item) => (
                     <div className="col-md-4 mb-4" key={item.id}>
                         <div className="card h-100">
+
                             {item.image_url && (
-                                <img src={item.image_url} className="card-img-top" alt={item.title} />
+                                <img
+                                    src={item.image_url}
+                                    className="card-img-top"
+                                    alt={item.title}
+                                />
                             )}
+
                             <div className="card-body">
                                 <h5>{item.title}</h5>
                                 <p><strong>Categoría:</strong> {item.category}</p>
                                 <p><strong>Fecha:</strong> {item.date}</p>
                                 <p><strong>Entrenador:</strong> {item.trainer_email}</p>
-                                <Link to={`/classes/${item.id}`} className="btn btn-outline-primary">
+
+                                <Link
+                                    to={`/classes/${item.id}`}
+                                    className="btn btn-outline-primary"
+                                >
                                     Ver detalles
                                 </Link>
                             </div>
+
                         </div>
                     </div>
                 ))}
