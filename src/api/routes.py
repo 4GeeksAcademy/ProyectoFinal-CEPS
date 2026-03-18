@@ -376,9 +376,9 @@ def add_favotites_classes(class_id):
         return jsonify({"msg": "Clase no encontrada"}), 404
 
     if Favorites_Classes.query.filter_by(user_id=current_user.id, class_id=class_id).first():
-        return jsonify({"msg": "Rutina ya agregada a favoritos"}), 400
+        return jsonify({"msg": "Clase ya agregada a favoritos"}), 400
 
-    new_class = GymClass(
+    new_class = Favorites_Classes(
         user_id=current_user.id,
         class_id=class_id
     )

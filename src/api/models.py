@@ -123,7 +123,7 @@ class Favorites_Routines(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "routine_id": self.routine_id,
-            "routine_name": self.routine.name if self.routine else None
+            "routine": self.routine.serialize() if self.routine else None
         }
 
 class Favorites_Classes(db.Model):

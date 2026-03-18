@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const Login = () => {
+    const { dispatch } = useGlobalReducer();
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
@@ -35,9 +37,15 @@ export const Login = () => {
             if (!response.ok) {
                 throw new Error(data.msg || "Error al iniciar sesión");
             }
-
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
+            
+            // Dispatch login action to update global state
+            dispatch({ 
+                type: 'login', 
+                payload: {
+                    token: data.token,
+                    user: data.user
+                }
+            });
 
             navigate("/private");
 
