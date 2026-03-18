@@ -12,6 +12,7 @@ import { Classes } from "./pages/Classes";
 import { ClassDetails } from "./pages/ClassDetails";
 import { Routines } from "./pages/Routines";
 import { RoutineDetails } from "./pages/RoutineDetails";
+import { EditarPerfil } from "./pages/EditarPerfil";
 
 export const router = createBrowserRouter([
 	{
@@ -57,6 +58,10 @@ export const router = createBrowserRouter([
 			{
 				path: "/routines/:id",
 				element: <RoutineDetails />
+			},
+			{
+				path: "/editar-perfil",
+				element: <EditarPerfil />
 			}
 		]
 	}
