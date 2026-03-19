@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-from api.models import db, User, GymClass, Routine, Favorites_Routines
+from api.models import db, User, GymClass, Routine, Favorites_Routines, Favorites_Classes
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
@@ -259,7 +259,7 @@ def my_routines():
 
 @api.route("/favorites_routines/<int:routine_id>", methods=["POST"])
 @jwt_required()
-def add_favotites(routine_id):
+def add_favotites_routines(routine_id):
     current_user = get_current_user()
 
     if not current_user:
@@ -390,3 +390,90 @@ def update_profile():
             "msg": "Perfil actualizado",
             "user": user.serialize()
         }), 200
+
+
+@api.route("/favorites_classes", methods=["GET"])
+@jwt_required()
+def get_favorites_classes():
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"})
+
+    if current_user.role != "user":
+        return jsonify({"msg": "Solo los usuarios pueden ver sus clases favoritas"}), 403
+
+    favorites_classes = Favorites_Classes.query.filter_by(
+        user_id=current_user.id).all()
+
+    return jsonify([favorite.serialize() for favorite in favorites_classes]), 200
+
+
+@api.route("/favorites_classes/<int:class_id>", methods=["POST"])
+@jwt_required()
+def add_favotites_classes(class_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role != "user":
+        return jsonify({"msg": "Solo los usuarios pueden agregar clases a favoritos"}), 403
+
+    classes = GymClass.query.get(class_id)
+
+    if not classes:
+        return jsonify({"msg": "Clase no encontrada"}), 404
+
+    if Favorites_Classes.query.filter_by(user_id=current_user.id, class_id=class_id).first():
+        return jsonify({"msg": "Clase ya agregada a favoritos"}), 400
+
+    new_class = Favorites_Classes(
+        user_id=current_user.id,
+        class_id=class_id
+    )
+
+    try:
+        db.session.add(new_class)
+        db.session.commit()
+        return jsonify({
+            "msg": "Clase agregada a favoritos exitosamente",
+            "routine": new_class.serialize()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "msg": "Error al agregar clase a favoritos",
+            "error": str(e)
+        }), 500
+
+
+@api.route("/favorites_classes/<int:class_id>", methods=["DELETE"])
+@jwt_required()
+def delete_classes(class_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role != "user":
+        return jsonify({"msg": "Solo los usuarios pueden eliminar clases"}), 403
+
+    favorite = Favorites_Classes.query.filter_by(
+        user_id=current_user.id,
+        class_id=class_id
+    ).first()
+
+    if not favorite:
+        return jsonify({"msg": "No tienes esta clase agregada a favoritos"}), 404
+
+    try:
+        db.session.delete(favorite)
+        db.session.commit()
+        return jsonify({"msg": "Clase eliminada exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "msg": "Error al eliminar la clase",
+            "eror": str(e)
+        }), 500

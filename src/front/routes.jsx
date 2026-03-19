@@ -13,6 +13,8 @@ import { ClassDetails } from "./pages/ClassDetails";
 import { Routines } from "./pages/Routines";
 import { RoutineDetails } from "./pages/RoutineDetails";
 import { EditarPerfil } from "./pages/EditarPerfil";
+import { Favorites } from "./pages/Favorites";
+
 
 export const router = createBrowserRouter([
 	{
@@ -62,6 +64,10 @@ export const router = createBrowserRouter([
 			{
 				path: "/editar-perfil",
 				element: <EditarPerfil />
+			},
+			{
+				path: "/favorites",
+				element: <Favorites />
 			}
 		]
 	}
