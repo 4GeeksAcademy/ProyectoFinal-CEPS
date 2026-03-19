@@ -57,10 +57,15 @@ export const CreateClass = () => {
         body: JSON.stringify(form)
       });
 
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (err) {
+        data = {};
+      }
 
       if (!response.ok) {
-        throw new Error(data.msg || "Error al crear clase");
+        throw new Error(data.msg || "Error en el servidor. Por favor revisa la terminal del backend.");
       }
 
       alert("Clase creada exitosamente");
