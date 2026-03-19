@@ -127,14 +127,20 @@ def create_class():
         if not body.get(field):
             return jsonify({"msg": f"El campo '{field}' es requerido"}), 400
 
+    try:
+        duration_val = int(body.get("duration"))
+        capacity_val = int(body.get("capacity"))
+    except ValueError:
+        return jsonify({"msg": "La duración y la capacidad deben ser números enteros válidos"}), 400
+
     new_class = GymClass(
         title=body.get("title"),
         description=body.get("description"),
         category=body.get("category"),
         date=body.get("date"),
         time=body.get("time"),
-        duration=int(body.get("duration")),
-        capacity=int(body.get("capacity")),
+        duration=duration_val,
+        capacity=capacity_val,
         level=body.get("level"),
         location=body.get("location"),
         image_url=body.get("image_url"),
