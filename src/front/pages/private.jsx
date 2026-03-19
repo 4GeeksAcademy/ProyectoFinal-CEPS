@@ -1,27 +1,36 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const Private = () => {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const { store, dispatch } = useGlobalReducer();
+    const { user } = store;
 
     if (!user) {
         return (
             <div className="container mt-5">
                 <div className="alert alert-danger">Debes iniciar sesión.</div>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => navigate("/login")}
+                >
+                    Ir a Login
+                </button>
             </div>
         );
     }
+
+    const handleLogout = () => {
+        dispatch({ type: "logout" });
+        navigate("/login");
+    };
 
     return (
         <div className="container mt-5 position-relative pt-5">
             <button
                 className="btn btn-danger position-absolute top-0 end-0"
-                onClick={() => {
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("user");
-                    navigate("/login");
-                }}
+                onClick={handleLogout}
             >
                 Cerrar sesión
             </button>
@@ -38,6 +47,11 @@ export const Private = () => {
                     <>
                         <Link to="/create-class" className="btn btn-primary me-2">Crear clase</Link>
                         <Link to="/create-routine" className="btn btn-success me-2">Crear rutina</Link>
+                    </>
+                )}
+                {user.role === "user" && (
+                    <>
+                        <Link to="/favorites" className="btn btn-primary me-2">Favoritos</Link>
                     </>
                 )}
             </div>

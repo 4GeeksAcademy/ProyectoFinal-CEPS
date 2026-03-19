@@ -19,6 +19,7 @@ class User(db.Model):
     classes = relationship("GymClass", back_populates="trainer", cascade="all, delete-orphan")
     routines = relationship("Routine", back_populates="trainer", cascade="all, delete-orphan")
     favorites_routines = relationship("Favorites_Routines", back_populates="user", cascade="all, delete-orphan")
+    favorites_classes = relationship("Favorites_Classes", back_populates="user", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
@@ -55,6 +56,8 @@ class GymClass(db.Model):
 
     trainer_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     trainer = relationship("User", back_populates="classes")
+    favorites_classes = relationship("Favorites_Classes", back_populates="gym_class", cascade="all, delete-orphan")
+
 
     def serialize(self):
         return {
@@ -120,5 +123,23 @@ class Favorites_Routines(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "routine_id": self.routine_id,
-            "routine_name": self.routine.name if self.routine else None
+            "routine": self.routine.serialize() if self.routine else None
+        }
+
+class Favorites_Classes(db.Model):
+    __tablename__ = "favorites_classes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id : Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    class_id : Mapped[int] = mapped_column(ForeignKey("gym_class.id"), nullable=False)
+
+    user = relationship("User", back_populates="favorites_classes")
+    gym_class = relationship("GymClass", back_populates="favorites_classes")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "class_id": self.class_id,
+            "class_title": self.gym_class.title if self.gym_class else None
         }

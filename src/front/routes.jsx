@@ -12,6 +12,8 @@ import { Classes } from "./pages/Classes";
 import { ClassDetails } from "./pages/ClassDetails";
 import { Routines } from "./pages/Routines";
 import { RoutineDetails } from "./pages/RoutineDetails";
+import { Favorites } from "./pages/Favorites";
+
 
 export const router = createBrowserRouter([
 	{
@@ -57,7 +59,11 @@ export const router = createBrowserRouter([
 			{
 				path: "/routines/:id",
 				element: <RoutineDetails />
-			}
+			},
+			{
+				path: "/favorites",
+				element: <Favorites />
+			},
 		]
 	}
 ]);
