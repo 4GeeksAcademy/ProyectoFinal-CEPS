@@ -11,21 +11,42 @@ class User(db.Model):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(
+        String(120), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=True)
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
-    
-    classes = relationship("GymClass", back_populates="trainer", cascade="all, delete-orphan")
-    routines = relationship("Routine", back_populates="trainer", cascade="all, delete-orphan")
-    favorites_routines = relationship("Favorites_Routines", back_populates="user", cascade="all, delete-orphan")
-    favorites_classes = relationship("Favorites_Classes", back_populates="user", cascade="all, delete-orphan")
+    is_active: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=True)
+    role: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="user")
+
+    name: Mapped[str] = mapped_column(String(120), nullable=True)
+    fitness_goals: Mapped[str] = mapped_column(Text, nullable=True)
+    fitness_level: Mapped[str] = mapped_column(
+        String(50), nullable=True, default="principiante")
+    birth_date: Mapped[str] = mapped_column(String(20), nullable=True)
+    phone: Mapped[str] = mapped_column(String(20), nullable=True)
+    avatar_url: Mapped[str] = mapped_column(String(255), nullable=True)
+
+    classes = relationship(
+        "GymClass", back_populates="trainer", cascade="all, delete-orphan")
+    routines = relationship(
+        "Routine", back_populates="trainer", cascade="all, delete-orphan")
+    favorites_routines = relationship(
+        "Favorites_Routines", back_populates="user", cascade="all, delete-orphan")
+    favorites_classes = relationship(
+        "Favorites_Classes", back_populates="user", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
             "id": self.id,
             "email": self.email,
             "role": self.role,
+            "name": self.name,
+            "fitness_goals": self.fitness_goals,
+            "fitness_level": self.fitness_level,
+            "birth_date": self.birth_date,
+            "phone": self.phone,
+            "avatar_url": self.avatar_url,
         }
 
     @classmethod
@@ -54,10 +75,11 @@ class GymClass(db.Model):
     location: Mapped[str] = mapped_column(String(120), nullable=True)
     image_url: Mapped[str] = mapped_column(String(255), nullable=True)
 
-    trainer_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    trainer_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id"), nullable=False)
     trainer = relationship("User", back_populates="classes")
-    favorites_classes = relationship("Favorites_Classes", back_populates="gym_class", cascade="all, delete-orphan")
-
+    favorites_classes = relationship(
+        "Favorites_Classes", back_populates="gym_class", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
@@ -89,9 +111,11 @@ class Routine(db.Model):
     exercises: Mapped[str] = mapped_column(Text, nullable=False)
     muscle_group: Mapped[str] = mapped_column(String(50), nullable=True)
 
-    trainer_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    trainer_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id"), nullable=False)
     trainer = relationship("User", back_populates="routines")
-    favorites_routines = relationship("Favorites_Routines", back_populates="routine", cascade="all, delete-orphan")
+    favorites_routines = relationship(
+        "Favorites_Routines", back_populates="routine", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
@@ -113,7 +137,8 @@ class Favorites_Routines(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    routine_id: Mapped[int] = mapped_column(ForeignKey("routine.id"), nullable=False)
+    routine_id: Mapped[int] = mapped_column(
+        ForeignKey("routine.id"), nullable=False)
 
     user = relationship("User", back_populates="favorites_routines")
     routine = relationship("Routine", back_populates="favorites_routines")
@@ -126,12 +151,14 @@ class Favorites_Routines(db.Model):
             "routine": self.routine.serialize() if self.routine else None
         }
 
+
 class Favorites_Classes(db.Model):
     __tablename__ = "favorites_classes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id : Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    class_id : Mapped[int] = mapped_column(ForeignKey("gym_class.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    class_id: Mapped[int] = mapped_column(
+        ForeignKey("gym_class.id"), nullable=False)
 
     user = relationship("User", back_populates="favorites_classes")
     gym_class = relationship("GymClass", back_populates="favorites_classes")

@@ -348,6 +348,56 @@ def get_favorites_routines():
     return jsonify([favorite.serialize() for favorite in favorites_routines]), 200
 
 
+@api.route("/profile", methods=["GET"])
+@jwt_required()
+def get_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if not user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    return jsonify({"user": user.serialize()}), 200
+
+
+@api.route("/profile", methods=["PUT"])
+@jwt_required()
+def update_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if not user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+    body = request.get_json()
+
+    if not body:
+        return jsonify({"msg": "Body vacío"}), 400
+    if "name" in body:
+        user.name = body.get("name")
+
+        if "fitness_goals" in body:
+            user.fitness_goals = body.get("fitness_goals")
+
+        if "fitness_level" in body:
+            user.fitness_level = body.get("fitness_level")
+
+        if "birth_date" in body:
+            user.birth_date = body.get("birth_date")
+
+        if "phone" in body:
+            user.phone = body.get("phone")
+
+        if "avatar_url" in body:
+            user.avatar_url = body.get("avatar_url")
+
+        db.session.commit()
+
+        return jsonify({
+            "msg": "Perfil actualizado",
+            "user": user.serialize()
+        }), 200
+
+
 @api.route("/favorites_classes", methods=["GET"])
 @jwt_required()
 def get_favorites_classes():
