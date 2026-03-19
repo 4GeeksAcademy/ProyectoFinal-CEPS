@@ -43,6 +43,10 @@ export const Private = () => {
                 <Link to="/classes" className="btn btn-outline-primary me-2">Ver clases</Link>
                 <Link to="/routines" className="btn btn-outline-success me-2">Ver rutinas</Link>
 
+                <Link to="/editar-perfil" className="btn btn-warning me-2">
+                    Editar perfil
+                </Link>
+
                 {user.role === "trainer" && (
                     <>
                         <Link to="/create-class" className="btn btn-primary me-2">Crear clase</Link>
