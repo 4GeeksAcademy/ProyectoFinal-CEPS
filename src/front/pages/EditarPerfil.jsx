@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const EditarPerfil = () => {
     const navigate = useNavigate();
+    const { store } = useGlobalReducer();
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     const [nombre, setNombre] = useState("");
@@ -20,7 +22,7 @@ export const EditarPerfil = () => {
     useEffect(() => {
         const cargarPerfil = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token = store.token || sessionStorage.getItem("token");
                 if (!token) {
                     navigate("/login");
                     return;
@@ -49,7 +51,7 @@ export const EditarPerfil = () => {
         };
 
         cargarPerfil();
-    }, [backendUrl, navigate]);
+    }, [backendUrl, navigate, store.token]);
 
     const guardarCambios = async (e) => {
         e.preventDefault();
@@ -58,7 +60,7 @@ export const EditarPerfil = () => {
         setExito("");
 
         try {
-            const token = localStorage.getItem("token");
+            const token = store.token || sessionStorage.getItem("token");
 
             const res = await fetch(`${backendUrl}/api/profile`, {
                 method: "PUT",
