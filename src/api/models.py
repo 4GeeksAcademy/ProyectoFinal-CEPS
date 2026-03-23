@@ -35,6 +35,10 @@ class User(db.Model):
         "Favorites_Routines", back_populates="user", cascade="all, delete-orphan")
     favorites_classes = relationship(
         "Favorites_Classes", back_populates="user", cascade="all, delete-orphan")
+    assigned_routines = relationship(
+        "Assigned_Routines", back_populates="user", cascade="all, delete-orphan", foreign_keys="Assigned_Routines.user_id")
+    assigned_classes = relationship(
+        "Assigned_Classes", back_populates="user", cascade="all, delete-orphan", foreign_keys="Assigned_Classes.user_id")
 
     def serialize(self):
         return {
@@ -80,6 +84,8 @@ class GymClass(db.Model):
     trainer = relationship("User", back_populates="classes")
     favorites_classes = relationship(
         "Favorites_Classes", back_populates="gym_class", cascade="all, delete-orphan")
+    assigned_classes = relationship(
+        "Assigned_Classes", back_populates="gym_class", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
@@ -116,6 +122,8 @@ class Routine(db.Model):
     trainer = relationship("User", back_populates="routines")
     favorites_routines = relationship(
         "Favorites_Routines", back_populates="routine", cascade="all, delete-orphan")
+    assigned_routines = relationship(
+        "Assigned_Routines", back_populates="routine", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
@@ -169,4 +177,60 @@ class Favorites_Classes(db.Model):
             "user_id": self.user_id,
             "class_id": self.class_id,
             "class_title": self.gym_class.title if self.gym_class else None
+        }
+
+
+class Assigned_Routines(db.Model):
+    __tablename__ = "assigned_routines"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    routine_id: Mapped[int] = mapped_column(
+        ForeignKey("routine.id"), nullable=False)
+    assigned_by: Mapped[int] = mapped_column(ForeignKey(
+        "user.id"), nullable=False)  # Trainer who assigned
+    assigned_date: Mapped[str] = mapped_column(String(20), nullable=True)
+
+    user = relationship(
+        "User", back_populates="assigned_routines", foreign_keys=[user_id])
+    routine = relationship("Routine", back_populates="assigned_routines")
+    trainer = relationship("User", foreign_keys=[assigned_by])
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "routine_id": self.routine_id,
+            "assigned_by": self.assigned_by,
+            "assigned_date": self.assigned_date,
+            "routine": self.routine.serialize() if self.routine else None,
+            "trainer_name": self.trainer.name if self.trainer else None
+        }
+
+
+class Assigned_Classes(db.Model):
+    __tablename__ = "assigned_classes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    class_id: Mapped[int] = mapped_column(
+        ForeignKey("gym_class.id"), nullable=False)
+    assigned_by: Mapped[int] = mapped_column(ForeignKey(
+        "user.id"), nullable=False)  # Trainer who assigned
+    assigned_date: Mapped[str] = mapped_column(String(20), nullable=True)
+
+    user = relationship(
+        "User", back_populates="assigned_classes", foreign_keys=[user_id])
+    gym_class = relationship("GymClass", back_populates="assigned_classes")
+    trainer = relationship("User", foreign_keys=[assigned_by])
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "class_id": self.class_id,
+            "assigned_by": self.assigned_by,
+            "assigned_date": self.assigned_date,
+            "class": self.gym_class.serialize() if self.gym_class else None,
+            "trainer_name": self.trainer.name if self.trainer else None
         }
