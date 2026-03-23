@@ -14,6 +14,8 @@ import { Routines } from "./pages/Routines";
 import { RoutineDetails } from "./pages/RoutineDetails";
 import { EditarPerfil } from "./pages/EditarPerfil";
 import { Favorites } from "./pages/Favorites";
+import { AssignWorkouts } from "./pages/AssignWorkouts";
+import { AssignedWorkouts } from "./pages/AssignedWorkouts";
 
 
 export const router = createBrowserRouter([
@@ -68,6 +70,14 @@ export const router = createBrowserRouter([
 			{
 				path: "/favorites",
 				element: <Favorites />
+			},
+			{
+				path: "/assign-workouts",
+				element: <AssignWorkouts />
+			},
+			{
+				path: "/assigned-workouts",
+				element: <AssignedWorkouts />
 			}
 		]
 	}

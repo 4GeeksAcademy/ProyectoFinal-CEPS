@@ -51,11 +51,13 @@ export const Private = () => {
                     <>
                         <Link to="/create-class" className="btn btn-primary me-2">Crear clase</Link>
                         <Link to="/create-routine" className="btn btn-success me-2">Crear rutina</Link>
+                        <Link to="/assign-workouts" className="btn btn-info me-2">Asignar entrenamientos</Link>
                     </>
                 )}
                 {user.role === "user" && (
                     <>
                         <Link to="/favorites" className="btn btn-primary me-2">Favoritos</Link>
+                        <Link to="/assigned-workouts" className="btn btn-warning me-2">Mis Asignaciones</Link>
                     </>
                 )}
             </div>

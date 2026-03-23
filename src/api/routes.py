@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-from api.models import db, User, GymClass, Routine, Favorites_Routines, Favorites_Classes
+from api.models import db, User, GymClass, Routine, Favorites_Routines, Favorites_Classes, Assigned_Routines, Assigned_Classes
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
@@ -483,3 +483,175 @@ def delete_classes(class_id):
             "msg": "Error al eliminar la clase",
             "eror": str(e)
         }), 500
+
+
+# Assigned Routines Endpoints
+@api.route("/assigned_routines", methods=["GET"])
+@jwt_required()
+def get_assigned_routines():
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    assigned_routines = Assigned_Routines.query.filter_by(
+        user_id=current_user.id).all()
+
+    return jsonify([assigned.serialize() for assigned in assigned_routines]), 200
+
+
+@api.route("/assigned_routines/<int:user_id>/<int:routine_id>", methods=["POST"])
+@jwt_required()
+def assign_routine(user_id, routine_id):
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden asignar rutinas"}), 403
+
+    user = User.query.get(user_id)
+    routine = Routine.query.get(routine_id)
+
+    if not user or not routine:
+        return jsonify({"msg": "Usuario o rutina no encontrada"}), 404
+
+    if Assigned_Routines.query.filter_by(user_id=user_id, routine_id=routine_id).first():
+        return jsonify({"msg": "Rutina ya asignada a este usuario"}), 400
+
+    from datetime import datetime
+    assigned_date = datetime.now().strftime("%Y-%m-%d")
+
+    new_assigned = Assigned_Routines(
+        user_id=user_id,
+        routine_id=routine_id,
+        assigned_by=current_user.id,
+        assigned_date=assigned_date
+    )
+
+    try:
+        db.session.add(new_assigned)
+        db.session.commit()
+        return jsonify({
+            "msg": "Rutina asignada exitosamente",
+            "assigned": new_assigned.serialize()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al asignar rutina"}), 500
+
+
+@api.route("/assigned_routines/<int:user_id>/<int:routine_id>", methods=["DELETE"])
+@jwt_required()
+def unassign_routine(user_id, routine_id):
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden desasignar rutinas"}), 403
+
+    assigned = Assigned_Routines.query.filter_by(
+        user_id=user_id,
+        routine_id=routine_id,
+        assigned_by=current_user.id
+    ).first()
+
+    if not assigned:
+        return jsonify({"msg": "Asignación no encontrada"}), 404
+
+    try:
+        db.session.delete(assigned)
+        db.session.commit()
+        return jsonify({"msg": "Rutina desasignada exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al desasignar rutina"}), 500
+
+
+# Assigned Classes Endpoints
+@api.route("/assigned_classes", methods=["GET"])
+@jwt_required()
+def get_assigned_classes():
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    assigned_classes = Assigned_Classes.query.filter_by(
+        user_id=current_user.id).all()
+
+    return jsonify([assigned.serialize() for assigned in assigned_classes]), 200
+
+
+@api.route("/assigned_classes/<int:user_id>/<int:class_id>", methods=["POST"])
+@jwt_required()
+def assign_class(user_id, class_id):
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden asignar clases"}), 403
+
+    user = User.query.get(user_id)
+    gym_class = GymClass.query.get(class_id)
+
+    if not user or not gym_class:
+        return jsonify({"msg": "Usuario o clase no encontrada"}), 404
+
+    if Assigned_Classes.query.filter_by(user_id=user_id, class_id=class_id).first():
+        return jsonify({"msg": "Clase ya asignada a este usuario"}), 400
+
+    from datetime import datetime
+    assigned_date = datetime.now().strftime("%Y-%m-%d")
+
+    new_assigned = Assigned_Classes(
+        user_id=user_id,
+        class_id=class_id,
+        assigned_by=current_user.id,
+        assigned_date=assigned_date
+    )
+
+    try:
+        db.session.add(new_assigned)
+        db.session.commit()
+        return jsonify({
+            "msg": "Clase asignada exitosamente",
+            "assigned": new_assigned.serialize()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al asignar clase"}), 500
+
+
+@api.route("/assigned_classes/<int:user_id>/<int:class_id>", methods=["DELETE"])
+@jwt_required()
+def unassign_class(user_id, class_id):
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden desasignar clases"}), 403
+
+    assigned = Assigned_Classes.query.filter_by(
+        user_id=user_id,
+        class_id=class_id,
+        assigned_by=current_user.id
+    ).first()
+
+    if not assigned:
+        return jsonify({"msg": "Asignación no encontrada"}), 404
+
+    try:
+        db.session.delete(assigned)
+        db.session.commit()
+        return jsonify({"msg": "Clase desasignada exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al desasignar clase"}), 500
+
+
+@api.route("/users", methods=["GET"])
+@jwt_required()
+def get_users():
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden ver la lista de usuarios"}), 403
+
+    users = User.query.filter_by(role="user").all()
+    return jsonify([user.serialize() for user in users]), 200
