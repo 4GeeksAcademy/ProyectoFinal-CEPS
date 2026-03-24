@@ -37,10 +37,13 @@ export const Login = () => {
             if (!response.ok) {
                 throw new Error(data.msg || "Error al iniciar sesión");
             }
-            
+
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+
             // Dispatch login action to update global state
-            dispatch({ 
-                type: 'login', 
+            dispatch({
+                type: 'login',
                 payload: {
                     token: data.token,
                     user: data.user
