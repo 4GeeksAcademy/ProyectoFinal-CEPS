@@ -43,6 +43,26 @@ export const Favorites = () => {
     }
   }, [token]);
 
+  const removeFavorite = async (routineId) => {
+    try {
+      const response = await fetch(`${backendUrl}/api/favorites_routines/${routineId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || "Error al eliminar de favoritos.");
+      }
+
+      // Actualizamos el listado removiendo la tarjeta al instante
+      setFavoriteRoutines(favoriteRoutines.filter(fav => fav.routine.id !== routineId));
+
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mt-5">
@@ -83,13 +103,19 @@ export const Favorites = () => {
                   <h5 className="card-title">{fav.routine.name}</h5>
                   <p className="card-text"><strong>Objetivo:</strong> {fav.routine.goal}</p>
                   <p className="card-text"><strong>Nivel:</strong> {fav.routine.level}</p>
-                  <div className="mt-auto">
+                  <div className="mt-auto d-flex justify-content-between">
                     <Link
                       to={`/routines/${fav.routine.id}`}
                       className="btn btn-primary"
                     >
                       Ver detalles
                     </Link>
+                    <button
+                      className="btn btn-danger ms-2"
+                      onClick={() => removeFavorite(fav.routine.id)}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
                   </div>
                 </div>
               </div>

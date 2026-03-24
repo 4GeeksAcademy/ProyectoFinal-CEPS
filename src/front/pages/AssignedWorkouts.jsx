@@ -8,8 +8,8 @@ import {
 } from "../services/googleCalendar";
 
 export const AssignedWorkouts = () => {
-    const { store } = useGlobalReducer();
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const { store } = useGlobalReducer();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     const [assignedRoutines, setAssignedRoutines] = useState([]);
     const [assignedClasses, setAssignedClasses] = useState([]);
@@ -29,28 +29,28 @@ export const AssignedWorkouts = () => {
         initializeGoogle();
     }, []);
 
-    useEffect(() => {
-        const fetchAssignedWorkouts = async () => {
-            try {
-                const token = store.token || sessionStorage.getItem("token");
-                if (!token) {
-                    setError("No autenticado");
-                    return;
-                }
+  useEffect(() => {
+    const fetchAssignedWorkouts = async () => {
+      try {
+        const token = store.token || sessionStorage.getItem("token");
+        if (!token) {
+          setError("No autenticado");
+          return;
+        }
 
-                const [routinesRes, classesRes] = await Promise.all([
-                    fetch(`${backendUrl}/api/assigned_routines`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                    fetch(`${backendUrl}/api/assigned_classes`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    })
-                ]);
+        const [routinesRes, classesRes] = await Promise.all([
+          fetch(`${backendUrl}/api/assigned_routines`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          }),
+          fetch(`${backendUrl}/api/assigned_classes`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          })
+        ]);
 
-                if (routinesRes.ok) {
-                    const routinesData = await routinesRes.json();
-                    setAssignedRoutines(routinesData);
-                }
+        if (routinesRes.ok) {
+          const routinesData = await routinesRes.json();
+          setAssignedRoutines(routinesData);
+        }
 
                 if (classesRes.ok) {
                     const classesData = await classesRes.json();
