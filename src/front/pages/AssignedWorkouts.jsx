@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
+import {
+    initGoogleCalendar,
+    requestGoogleAccess,
+    createCalendarEvent,
+} from "../services/googleCalendar";
 
 export const AssignedWorkouts = () => {
     const { store } = useGlobalReducer();
@@ -10,6 +15,19 @@ export const AssignedWorkouts = () => {
     const [assignedClasses, setAssignedClasses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [calendarLoadingId, setCalendarLoadingId] = useState(null);
+
+    useEffect(() => {
+        const initializeGoogle = async () => {
+            try {
+                await initGoogleCalendar();
+            } catch (err) {
+                console.error("Error inicializando Google Calendar:", err);
+            }
+        };
+
+        initializeGoogle();
+    }, []);
 
     useEffect(() => {
         const fetchAssignedWorkouts = async () => {
@@ -22,10 +40,10 @@ export const AssignedWorkouts = () => {
 
                 const [routinesRes, classesRes] = await Promise.all([
                     fetch(`${backendUrl}/api/assigned_routines`, {
-                        headers: { "Authorization": `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${token}` }
                     }),
                     fetch(`${backendUrl}/api/assigned_classes`, {
-                        headers: { "Authorization": `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
 
@@ -38,7 +56,6 @@ export const AssignedWorkouts = () => {
                     const classesData = await classesRes.json();
                     setAssignedClasses(classesData);
                 }
-
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -48,6 +65,49 @@ export const AssignedWorkouts = () => {
 
         fetchAssignedWorkouts();
     }, [backendUrl, store.token]);
+
+    const buildDateTime = (dateString, hour = 18, minutes = 0) => {
+        if (!dateString) return null;
+
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return null;
+
+        date.setHours(hour, minutes, 0, 0);
+        return date.toISOString();
+    };
+
+    const handleAddClassToCalendar = async (assigned) => {
+        try {
+            setCalendarLoadingId(`class-${assigned.id}`);
+
+            await requestGoogleAccess();
+
+            const startDateTime =
+                buildDateTime(assigned.assigned_date, 18, 0) ||
+                new Date().toISOString();
+
+            const endDateTime =
+                buildDateTime(assigned.assigned_date, 19, 0) ||
+                new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+            await createCalendarEvent({
+                title: `GymPlanner - ${assigned.class?.title || "Clase"}`,
+                description: `Clase: ${assigned.class?.description || "Sin descripción"}
+Asignado por: ${assigned.trainer_name || "Trainer"}
+Fecha: ${assigned.assigned_date || "Sin fecha"}`,
+                startDateTime,
+                endDateTime,
+                timeZone: "America/Bogota",
+            });
+
+            alert("Clase agregada al calendario");
+        } catch (err) {
+            console.error(err);
+            alert(err.message || "Error al agregar clase");
+        } finally {
+            setCalendarLoadingId(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -112,12 +172,24 @@ export const AssignedWorkouts = () => {
                                         Asignado por: {assigned.trainer_name} | Fecha: {assigned.assigned_date}
                                     </small>
                                     <br />
-                                    <Link
-                                        to={`/classes/${assigned.class?.id}`}
-                                        className="btn btn-outline-success btn-sm mt-2"
-                                    >
-                                        Ver clase
-                                    </Link>
+                                    <div className="d-flex gap-2 flex-wrap mt-2">
+                                        <Link
+                                            to={`/classes/${assigned.class?.id}`}
+                                            className="btn btn-outline-success btn-sm"
+                                        >
+                                            Ver clase
+                                        </Link>
+
+                                        <button
+                                            className="btn btn-outline-dark btn-sm"
+                                            onClick={() => handleAddClassToCalendar(assigned)}
+                                            disabled={calendarLoadingId === `class-${assigned.id}`}
+                                        >
+                                            {calendarLoadingId === `class-${assigned.id}`
+                                                ? "Agregando..."
+                                                : "Agregar al calendario"}
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
