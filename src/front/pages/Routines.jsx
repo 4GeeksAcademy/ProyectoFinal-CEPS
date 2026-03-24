@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const Routines = () => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -7,6 +8,9 @@ export const Routines = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
+    const [favoriteRoutines, setFavoriteRoutines] = useState([]);
+    const { store } = useGlobalReducer();
+    const { token, user } = store;
 
     useEffect(() => {
         const fetchRoutines = async () => {
@@ -21,6 +25,16 @@ export const Routines = () => {
                 }
 
                 setRoutines(data);
+
+                if (token && user?.role === "user") {
+                    const favRes = await fetch(`${backendUrl}/api/favorites_routines`, {
+                        headers: { "Authorization": `Bearer ${token}` }
+                    });
+                    if (favRes.ok) {
+                        const favData = await favRes.json();
+                        setFavoriteRoutines(favData.map(fav => fav.routine_id || fav.routine?.id));
+                    }
+                }
             } catch (error) {
                 setError(error.message);
             } finally {
@@ -29,7 +43,41 @@ export const Routines = () => {
         };
 
         fetchRoutines();
-    }, [backendUrl]);
+    }, [backendUrl, token, user?.role]);
+
+    const toggleFavorite = async (routineId) => {
+        if (!token) {
+            alert("Necesitas iniciar sesión para añadir a favoritos.");
+            return;
+        }
+
+        const isFavorite = favoriteRoutines.includes(routineId);
+        const method = isFavorite ? "DELETE" : "POST";
+
+        try {
+            const response = await fetch(`${backendUrl}/api/favorites_routines/${routineId}`, {
+                method: method,
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.msg || "Error al actualizar favoritos.");
+            }
+
+            if (isFavorite) {
+                setFavoriteRoutines(favoriteRoutines.filter(id => id !== routineId));
+            } else {
+                setFavoriteRoutines([...favoriteRoutines, routineId]);
+            }
+
+        } catch (error) {
+            alert(error.message);
+        }
+    };
 
     const filteredRoutines =
         selectedMuscleGroup === "all"
@@ -81,7 +129,19 @@ export const Routines = () => {
                         <div className="col-md-4 mb-4" key={item.id}>
                             <div className="card h-100">
                                 <div className="card-body">
-                                    <h5>{item.name}</h5>
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 className="mb-0">{item.name}</h5>
+                                        {token && user?.role === 'user' && (
+                                            <button
+                                                className="btn btn-sm border-0 bg-transparent text-warning"
+                                                onClick={() => toggleFavorite(item.id)}
+                                                title={favoriteRoutines.includes(item.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                                                style={{ fontSize: "1.5rem", padding: "0", lineHeight: 1 }}
+                                            >
+                                                {favoriteRoutines.includes(item.id) ? "★" : "☆"}
+                                            </button>
+                                        )}
+                                    </div>
                                     <p><strong>Objetivo:</strong> {item.goal}</p>
                                     <p><strong>Nivel:</strong> {item.level}</p>
                                     <p>
