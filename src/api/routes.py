@@ -172,6 +172,24 @@ def get_class(class_id):
     return jsonify(gym_class.serialize()), 200
 
 
+@api.route("/classes/<int:class_id>/assigned-users", methods=["GET"])
+@jwt_required()
+def get_class_assigned_users(class_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    gym_class = GymClass.query.get(class_id)
+
+    if not gym_class:
+        return jsonify({"msg": "Clase no encontrada"}), 404
+
+    assigned = Assigned_Classes.query.filter_by(class_id=class_id).all()
+
+    return jsonify([item.serialize() for item in assigned]), 200
+
+
 @api.route("/routines", methods=["POST"])
 @jwt_required()
 def create_routine():
@@ -368,34 +386,36 @@ def update_profile():
 
     if not user:
         return jsonify({"msg": "Usuario no encontrado"}), 404
+
     body = request.get_json()
 
     if not body:
         return jsonify({"msg": "Body vacío"}), 400
+
     if "name" in body:
         user.name = body.get("name")
 
-        if "fitness_goals" in body:
-            user.fitness_goals = body.get("fitness_goals")
+    if "fitness_goals" in body:
+        user.fitness_goals = body.get("fitness_goals")
 
-        if "fitness_level" in body:
-            user.fitness_level = body.get("fitness_level")
+    if "fitness_level" in body:
+        user.fitness_level = body.get("fitness_level")
 
-        if "birth_date" in body:
-            user.birth_date = body.get("birth_date")
+    if "birth_date" in body:
+        user.birth_date = body.get("birth_date")
 
-        if "phone" in body:
-            user.phone = body.get("phone")
+    if "phone" in body:
+        user.phone = body.get("phone")
 
-        if "avatar_url" in body:
-            user.avatar_url = body.get("avatar_url")
+    if "avatar_url" in body:
+        user.avatar_url = body.get("avatar_url")
 
-        db.session.commit()
+    db.session.commit()
 
-        return jsonify({
-            "msg": "Perfil actualizado",
-            "user": user.serialize()
-        }), 200
+    return jsonify({
+        "msg": "Perfil actualizado",
+        "user": user.serialize()
+    }), 200
 
 
 @api.route("/favorites_classes", methods=["GET"])
@@ -404,7 +424,7 @@ def get_favorites_classes():
     current_user = get_current_user()
 
     if not current_user:
-        return jsonify({"msg": "Usuario no encontrado"})
+        return jsonify({"msg": "Usuario no encontrado"}), 404
 
     if current_user.role != "user":
         return jsonify({"msg": "Solo los usuarios pueden ver sus clases favoritas"}), 403
@@ -481,11 +501,10 @@ def delete_classes(class_id):
         db.session.rollback()
         return jsonify({
             "msg": "Error al eliminar la clase",
-            "eror": str(e)
+            "error": str(e)
         }), 500
 
 
-# Assigned Routines Endpoints
 @api.route("/assigned_routines", methods=["GET"])
 @jwt_required()
 def get_assigned_routines():
@@ -565,7 +584,6 @@ def unassign_routine(user_id, routine_id):
         return jsonify({"msg": "Error al desasignar rutina"}), 500
 
 
-# Assigned Classes Endpoints
 @api.route("/assigned_classes", methods=["GET"])
 @jwt_required()
 def get_assigned_classes():
@@ -585,8 +603,14 @@ def get_assigned_classes():
 def assign_class(user_id, class_id):
     current_user = get_current_user()
 
-    if not current_user or current_user.role != "trainer":
-        return jsonify({"msg": "Solo los entrenadores pueden asignar clases"}), 403
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role == "user" and current_user.id != user_id:
+        return jsonify({"msg": "No autorizado"}), 403
+
+    if current_user.role not in ["trainer", "user"]:
+        return jsonify({"msg": "No autorizado"}), 403
 
     user = User.query.get(user_id)
     gym_class = GymClass.query.get(class_id)
@@ -594,8 +618,20 @@ def assign_class(user_id, class_id):
     if not user or not gym_class:
         return jsonify({"msg": "Usuario o clase no encontrada"}), 404
 
-    if Assigned_Classes.query.filter_by(user_id=user_id, class_id=class_id).first():
+    existing_assignment = Assigned_Classes.query.filter_by(
+        user_id=user_id,
+        class_id=class_id
+    ).first()
+
+    if existing_assignment:
+        if current_user.role == "user":
+            return jsonify({"msg": "Ya estás registrado en esta clase"}), 400
         return jsonify({"msg": "Clase ya asignada a este usuario"}), 400
+
+    occupied_slots = Assigned_Classes.query.filter_by(class_id=class_id).count()
+
+    if occupied_slots >= gym_class.capacity:
+        return jsonify({"msg": "No hay cupos disponibles para esta clase"}), 400
 
     from datetime import datetime
     assigned_date = datetime.now().strftime("%Y-%m-%d")
@@ -611,12 +647,15 @@ def assign_class(user_id, class_id):
         db.session.add(new_assigned)
         db.session.commit()
         return jsonify({
-            "msg": "Clase asignada exitosamente",
+            "msg": "Registro exitoso a la clase" if current_user.role == "user" else "Clase asignada exitosamente",
             "assigned": new_assigned.serialize()
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"msg": "Error al asignar clase"}), 500
+        return jsonify({
+            "msg": "Error al registrar la clase",
+            "error": str(e)
+        }), 500
 
 
 @api.route("/assigned_classes/<int:user_id>/<int:class_id>", methods=["DELETE"])
@@ -624,13 +663,18 @@ def assign_class(user_id, class_id):
 def unassign_class(user_id, class_id):
     current_user = get_current_user()
 
-    if not current_user or current_user.role != "trainer":
-        return jsonify({"msg": "Solo los entrenadores pueden desasignar clases"}), 403
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role == "user" and current_user.id != user_id:
+        return jsonify({"msg": "No autorizado"}), 403
+
+    if current_user.role not in ["trainer", "user"]:
+        return jsonify({"msg": "No autorizado"}), 403
 
     assigned = Assigned_Classes.query.filter_by(
         user_id=user_id,
-        class_id=class_id,
-        assigned_by=current_user.id
+        class_id=class_id
     ).first()
 
     if not assigned:
@@ -655,3 +699,4 @@ def get_users():
 
     users = User.query.filter_by(role="user").all()
     return jsonify([user.serialize() for user in users]), 200
+

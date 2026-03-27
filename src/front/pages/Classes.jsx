@@ -31,7 +31,6 @@ export const Classes = () => {
         fetchClasses();
     }, [backendUrl]);
 
-    // Estado de carga
     if (loading) {
         return (
             <div className="container mt-5 text-center">
@@ -58,7 +57,6 @@ export const Classes = () => {
                 {classes.map((item) => (
                     <div className="col-md-4 mb-4" key={item.id}>
                         <div className="card h-100">
-
                             {item.image_url && (
                                 <img
                                     src={item.image_url}
@@ -72,15 +70,23 @@ export const Classes = () => {
                                 <p><strong>Categoría:</strong> {item.category}</p>
                                 <p><strong>Fecha:</strong> {item.date}</p>
                                 <p><strong>Entrenador:</strong> {item.trainer_email}</p>
+                                <p><strong>Capacidad total:</strong> {item.capacity}</p>
+                                <p><strong>Cupos ocupados:</strong> {item.occupied_slots ?? 0}</p>
+                                <p><strong>Cupos disponibles:</strong> {item.available_slots ?? item.capacity}</p>
 
-                                <Link
-                                    to={`/classes/${item.id}`}
-                                    className="btn btn-outline-primary"
-                                >
-                                    Ver detalles
-                                </Link>
+                                <span className={`badge mb-3 ${(item.available_slots ?? item.capacity) > 0 ? "bg-success" : "bg-danger"}`}>
+                                    {(item.available_slots ?? item.capacity) > 0 ? "Disponible" : "Clase llena"}
+                                </span>
+
+                                <div>
+                                    <Link
+                                        to={`/classes/${item.id}`}
+                                        className="btn btn-outline-primary"
+                                    >
+                                        Ver detalles
+                                    </Link>
+                                </div>
                             </div>
-
                         </div>
                     </div>
                 ))}
