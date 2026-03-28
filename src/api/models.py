@@ -88,6 +88,9 @@ class GymClass(db.Model):
         "Assigned_Classes", back_populates="gym_class", cascade="all, delete-orphan")
 
     def serialize(self):
+        occupied_slots = len(self.assigned_classes)
+        available_slots = self.capacity - occupied_slots
+
         return {
             "id": self.id,
             "title": self.title,
@@ -97,6 +100,8 @@ class GymClass(db.Model):
             "time": self.time,
             "duration": self.duration,
             "capacity": self.capacity,
+            "occupied_slots": occupied_slots,
+            "available_slots": available_slots,
             "level": self.level,
             "location": self.location,
             "image_url": self.image_url,
@@ -188,7 +193,7 @@ class Assigned_Routines(db.Model):
     routine_id: Mapped[int] = mapped_column(
         ForeignKey("routine.id"), nullable=False)
     assigned_by: Mapped[int] = mapped_column(ForeignKey(
-        "user.id"), nullable=False)  # Trainer who assigned
+        "user.id"), nullable=False)
     assigned_date: Mapped[str] = mapped_column(String(20), nullable=True)
 
     user = relationship(
@@ -216,7 +221,7 @@ class Assigned_Classes(db.Model):
     class_id: Mapped[int] = mapped_column(
         ForeignKey("gym_class.id"), nullable=False)
     assigned_by: Mapped[int] = mapped_column(ForeignKey(
-        "user.id"), nullable=False)  # Trainer who assigned
+        "user.id"), nullable=False)
     assigned_date: Mapped[str] = mapped_column(String(20), nullable=True)
 
     user = relationship(
@@ -232,5 +237,8 @@ class Assigned_Classes(db.Model):
             "assigned_by": self.assigned_by,
             "assigned_date": self.assigned_date,
             "class": self.gym_class.serialize() if self.gym_class else None,
-            "trainer_name": self.trainer.name if self.trainer else None
+            "trainer_name": self.trainer.name if self.trainer else None,
+            "user_name": self.user.name if self.user else None,
+            "user_email": self.user.email if self.user else None
         }
+    

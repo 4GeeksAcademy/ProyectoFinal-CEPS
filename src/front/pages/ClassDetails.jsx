@@ -10,19 +10,56 @@ export const ClassDetails = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    const [assignedUsers, setAssignedUsers] = useState([]);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [actionMessage, setActionMessage] = useState("");
+    const [currentUser, setCurrentUser] = useState(null);
+    const [isTrainer, setIsTrainer] = useState(false);
+
     useEffect(() => {
-        const fetchClass = async () => {
+        const fetchClassData = async () => {
             try {
                 setLoading(true);
+                setError("");
+                setActionMessage("");
 
-                const response = await fetch(`${backendUrl}/api/classes/${id}`);
-                const data = await response.json();
+                const classResponse = await fetch(`${backendUrl}/api/classes/${id}`);
+                const classData = await classResponse.json();
 
-                if (!response.ok) {
-                    throw new Error(data.msg || "Error al cargar la clase");
+                if (!classResponse.ok) {
+                    throw new Error(classData.msg || "Error al cargar la clase");
                 }
 
-                setGymClass(data);
+                setGymClass(classData);
+
+                const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+                if (token) {
+                    const [assignedResponse, profileResponse] = await Promise.all([
+                        fetch(`${backendUrl}/api/classes/${id}/assigned-users`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }),
+                        fetch(`${backendUrl}/api/profile`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        })
+                    ]);
+
+                    if (assignedResponse.ok) {
+                        const assignedData = await assignedResponse.json();
+                        setAssignedUsers(assignedData);
+                    }
+
+                    if (profileResponse.ok) {
+                        const profileData = await profileResponse.json();
+                        setCurrentUser(profileData.user);
+                        setIsTrainer(profileData.user?.role === "trainer");
+                        localStorage.setItem("user_id", profileData.user?.id);
+                    }
+                }
             } catch (error) {
                 setError(error.message);
             } finally {
@@ -30,8 +67,121 @@ export const ClassDetails = () => {
             }
         };
 
-        fetchClass();
+        fetchClassData();
     }, [backendUrl, id]);
+
+    const isCurrentUserRegistered = assignedUsers.some(
+        (assigned) => Number(assigned.user_id) === Number(currentUser?.id)
+    );
+
+    const refreshClassData = async () => {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+        const [updatedClassRes, updatedAssignedRes] = await Promise.all([
+            fetch(`${backendUrl}/api/classes/${id}`),
+            fetch(`${backendUrl}/api/classes/${id}/assigned-users`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+        ]);
+
+        if (updatedClassRes.ok) {
+            const updatedClass = await updatedClassRes.json();
+            setGymClass(updatedClass);
+        }
+
+        if (updatedAssignedRes.ok) {
+            const updatedAssigned = await updatedAssignedRes.json();
+            setAssignedUsers(updatedAssigned);
+        }
+    };
+
+    const handleRegisterToClass = async () => {
+        try {
+            setActionMessage("");
+
+            const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+            if (!token) {
+                setActionMessage("Debes iniciar sesión.");
+                return;
+            }
+
+            if (!currentUser) {
+                setActionMessage("No se pudo identificar al usuario.");
+                return;
+            }
+
+            setActionLoading(true);
+
+            const response = await fetch(
+                `${backendUrl}/api/assigned_classes/${currentUser.id}/${id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.msg || "Error al registrarte en la clase");
+            }
+
+            setActionMessage("Te registraste correctamente en la clase.");
+            await refreshClassData();
+        } catch (error) {
+            setActionMessage(error.message);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleCancelRegistration = async () => {
+        try {
+            setActionMessage("");
+
+            const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+            if (!token) {
+                setActionMessage("Debes iniciar sesión.");
+                return;
+            }
+
+            if (!currentUser) {
+                setActionMessage("No se pudo identificar al usuario.");
+                return;
+            }
+
+            setActionLoading(true);
+
+            const response = await fetch(
+                `${backendUrl}/api/assigned_classes/${currentUser.id}/${id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.msg || "Error al cancelar la inscripción");
+            }
+
+            setActionMessage("Tu inscripción fue cancelada correctamente.");
+            await refreshClassData();
+        } catch (error) {
+            setActionMessage(error.message);
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -68,7 +218,6 @@ export const ClassDetails = () => {
 
     return (
         <div className="container mt-5">
-
             <h2>{gymClass.title}</h2>
 
             {gymClass.image_url && (
@@ -88,7 +237,9 @@ export const ClassDetails = () => {
                     <p><strong>Fecha:</strong> {gymClass.date}</p>
                     <p><strong>Hora:</strong> {gymClass.time}</p>
                     <p><strong>Duración:</strong> {gymClass.duration} min</p>
-                    <p><strong>Capacidad:</strong> {gymClass.capacity}</p>
+                    <p><strong>Capacidad total:</strong> {gymClass.capacity}</p>
+                    <p><strong>Cupos ocupados:</strong> {gymClass.occupied_slots ?? 0}</p>
+                    <p><strong>Cupos disponibles:</strong> {gymClass.available_slots ?? gymClass.capacity}</p>
                 </div>
 
                 <div className="col-md-6">
@@ -98,13 +249,77 @@ export const ClassDetails = () => {
                 </div>
             </div>
 
+            <hr className="my-4" />
+
+            <div className="row">
+                <div className="col-md-6">
+                    <h4>Usuarios inscritos</h4>
+
+                    {assignedUsers.length === 0 ? (
+                        <div className="alert alert-info">Aún no hay usuarios inscritos en esta clase.</div>
+                    ) : (
+                        <ul className="list-group">
+                            {assignedUsers.map((assigned) => (
+                                <li
+                                    key={assigned.id}
+                                    className="list-group-item d-flex justify-content-between align-items-center"
+                                >
+                                    <div>
+                                        <strong>{assigned.user_name || "Sin nombre"}</strong>
+                                        <br />
+                                        <small>{assigned.user_email}</small>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+
+                <div className="col-md-6">
+                    <h4>{isTrainer ? "Gestión de la clase" : "Registro a la clase"}</h4>
+
+                    {isCurrentUserRegistered ? (
+                        <>
+                            <div className="alert alert-success">
+                                Ya estás registrado en esta clase.
+                            </div>
+
+                            <button
+                                className="btn btn-outline-danger"
+                                onClick={handleCancelRegistration}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? "Cancelando..." : "Cancelar mi inscripción"}
+                            </button>
+                        </>
+                    ) : (gymClass.available_slots ?? gymClass.capacity) <= 0 ? (
+                        <div className="alert alert-warning">
+                            La clase está llena.
+                        </div>
+                    ) : (
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleRegisterToClass}
+                            disabled={actionLoading}
+                        >
+                            {actionLoading ? "Registrando..." : "Registrarme a esta clase"}
+                        </button>
+                    )}
+
+                    {actionMessage && (
+                        <div className="alert alert-info mt-3">
+                            {actionMessage}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <button
                 className="btn btn-secondary mt-4"
                 onClick={() => navigate(-1)}
             >
                 Volver a clases
             </button>
-
         </div>
     );
 };
