@@ -83,14 +83,17 @@ export const Routines = () => {
         selectedMuscleGroup === "all"
             ? routines
             : routines.filter((item) => {
-                  const muscle = item.muscle_group?.toLowerCase().trim();
-                  return muscle === selectedMuscleGroup;
-              });
+                const muscle = item.muscle_group?.toLowerCase().trim();
+                return muscle === selectedMuscleGroup;
+            });
 
     if (loading) {
         return (
-            <div className="container mt-5">
-                <div className="alert alert-info">Cargando rutinas...</div>
+            <div className="container mt-5 text-center">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                </div>
+                <p className="mt-3">Cargando rutinas...</p>
             </div>
         );
     }
@@ -124,7 +127,21 @@ export const Routines = () => {
             </div>
 
             <div className="row">
-                {filteredRoutines.length > 0 ? (
+                {routines.length === 0 && !loading && !error ? (
+                    <div className="col-12">
+                        <div className="text-center py-5">
+                            <i className="fas fa-dumbbell fa-4x text-muted mb-3"></i>
+                            <h4 className="text-muted">No hay rutinas disponibles</h4>
+                            <p className="text-muted">En este momento no hay rutinas programadas. Vuelve más tarde para ver nuevas rutinas.</p>
+                            {token && user?.role === "trainer" && (
+                                <Link to="/create-routine" className="btn btn-primary mt-3">
+                                    <i className="fas fa-plus me-2"></i>
+                                    Crear Nueva Rutina
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                ) : filteredRoutines.length > 0 ? (
                     filteredRoutines.map((item) => (
                         <div className="col-md-4 mb-4" key={item.id}>
                             <div className="card h-100">

@@ -223,6 +223,9 @@ class Assigned_Classes(db.Model):
     assigned_by: Mapped[int] = mapped_column(ForeignKey(
         "user.id"), nullable=False)
     assigned_date: Mapped[str] = mapped_column(String(20), nullable=True)
+    attended: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False)
+    attended_date: Mapped[str] = mapped_column(String(20), nullable=True)
 
     user = relationship(
         "User", back_populates="assigned_classes", foreign_keys=[user_id])
@@ -236,9 +239,10 @@ class Assigned_Classes(db.Model):
             "class_id": self.class_id,
             "assigned_by": self.assigned_by,
             "assigned_date": self.assigned_date,
+            "attended": self.attended,
+            "attended_date": self.attended_date,
             "class": self.gym_class.serialize() if self.gym_class else None,
             "trainer_name": self.trainer.name if self.trainer else None,
             "user_name": self.user.name if self.user else None,
             "user_email": self.user.email if self.user else None
         }
-    
