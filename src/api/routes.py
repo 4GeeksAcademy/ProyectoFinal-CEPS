@@ -628,7 +628,8 @@ def assign_class(user_id, class_id):
             return jsonify({"msg": "Ya estás registrado en esta clase"}), 400
         return jsonify({"msg": "Clase ya asignada a este usuario"}), 400
 
-    occupied_slots = Assigned_Classes.query.filter_by(class_id=class_id).count()
+    occupied_slots = Assigned_Classes.query.filter_by(
+        class_id=class_id).count()
 
     if occupied_slots >= gym_class.capacity:
         return jsonify({"msg": "No hay cupos disponibles para esta clase"}), 400
@@ -689,6 +690,20 @@ def unassign_class(user_id, class_id):
         return jsonify({"msg": "Error al desasignar clase"}), 500
 
 
+@api.route("/attended_classes", methods=["GET"])
+@jwt_required()
+def get_attended_classes():
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    attended_classes = Assigned_Classes.query.filter_by(
+        user_id=current_user.id, attended=True).all()
+
+    return jsonify([assigned.serialize() for assigned in attended_classes]), 200
+
+
 @api.route("/users", methods=["GET"])
 @jwt_required()
 def get_users():
@@ -699,4 +714,3 @@ def get_users():
 
     users = User.query.filter_by(role="user").all()
     return jsonify([user.serialize() for user in users]), 200
-

@@ -18,6 +18,7 @@ import { VerPerfil } from "./pages/VerPerfil";
 import { Favorites } from "./pages/Favorites";
 import { AssignWorkouts } from "./pages/AssignWorkouts";
 import { AssignedWorkouts } from "./pages/AssignedWorkouts";
+import { HistoryClasses } from "./pages/HistoryClasses";
 
 
 export const router = createBrowserRouter([
@@ -85,6 +86,10 @@ export const router = createBrowserRouter([
 			{
 				path: "/assigned-workouts",
 				element: <AssignedWorkouts />
+			},
+			{
+				path: "/historial-clases",
+				element: <HistoryClasses />
 			}
 		]
 	}
