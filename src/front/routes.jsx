@@ -20,6 +20,7 @@ import { AssignWorkouts } from "./pages/AssignWorkouts";
 import { AssignedWorkouts } from "./pages/AssignedWorkouts";
 import { Exercises } from "./pages/Exercises";
 import { ExerciseDetails } from "./pages/ExerciseDetails";
+import { HistoryClasses } from "./pages/HistoryClasses";
 
 
 export const router = createBrowserRouter([
@@ -96,6 +97,10 @@ export const router = createBrowserRouter([
         path: "/exercises/:id",
         element: <ExerciseDetails />
       },
+      {
+        path: "/historial-clases",
+        element: <HistoryClasses />
+      }
 
     ]
   }

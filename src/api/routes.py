@@ -696,6 +696,20 @@ def unassign_class(user_id, class_id):
         return jsonify({"msg": "Error al desasignar clase"}), 500
 
 
+@api.route("/attended_classes", methods=["GET"])
+@jwt_required()
+def get_attended_classes():
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    attended_classes = Assigned_Classes.query.filter_by(
+        user_id=current_user.id, attended=True).all()
+
+    return jsonify([assigned.serialize() for assigned in attended_classes]), 200
+
+
 @api.route("/users", methods=["GET"])
 @jwt_required()
 def get_users():

@@ -140,6 +140,10 @@ export const VerPerfil = () => {
                                 <i className="fas fa-edit me-2"></i>
                                 Editar Perfil
                             </Link>
+                            <Link to="/historial-clases" className="btn btn-outline-info flex-fill py-2 rounded-pill">
+                                <i className="fas fa-history me-2"></i>
+                                Historial de Clases
+                            </Link>
                             <Link to="/private" className="btn btn-outline-secondary flex-fill py-2 rounded-pill">
                                 <i className="fas fa-arrow-left me-2"></i>
                                 Volver
