@@ -180,9 +180,10 @@ export const Exercises = () => {
                 <div
                   className="card-img-top"
                   style={{
-                    height: "370px",
+                    height: "200px",
                     backgroundImage: `url(${exercise.image_url})`,
-                    backgroundSize: "cover",
+                    backgroundSize: "contain",
+                    backgroundRepeat: "no-repeat",
                     backgroundPosition: "center",
                   }}
                 ></div>

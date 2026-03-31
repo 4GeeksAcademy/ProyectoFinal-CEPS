@@ -279,7 +279,7 @@ def my_routines():
 
     if not current_user:
         return jsonify({"msg": "Usuario no encontrado"}), 404
-
+  
     if current_user.role != "trainer":
         return jsonify({"msg": "Solo los entrenadores pueden ver sus rutinas"}), 403
 

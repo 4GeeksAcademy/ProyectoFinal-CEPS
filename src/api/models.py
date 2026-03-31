@@ -274,3 +274,4 @@ class Exercise(db.Model):
             "preparation": self.preparation,
             "image_url": self.image_url
         }
+

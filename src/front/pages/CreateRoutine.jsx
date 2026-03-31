@@ -131,7 +131,7 @@ export const CreateRoutine = () => {
                     src={ex.image_url}
                     alt={ex.name}
                     className="card-img-top"
-                    style={{ height: "200px", objectFit: "cover" }}
+                    style={{ height: "200px", objectFit: "contain" }}
                   />
                 )}
                 <div className="card-body">

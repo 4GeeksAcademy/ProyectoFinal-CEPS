@@ -75,7 +75,7 @@ export const ExerciseDetails = () => {
               src={exercise.image_url}
               alt={exercise.name}
               className="img-fluid rounded shadow-sm w-100"
-              style={{ objectFit: 'cover', maxHeight: '500px' }}
+              style={{ objectFit: 'cover', maxHeight: '550px' }}
             />
           )}
         </div>
