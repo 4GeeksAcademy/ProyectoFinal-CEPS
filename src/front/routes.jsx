@@ -18,74 +18,85 @@ import { VerPerfil } from "./pages/VerPerfil";
 import { Favorites } from "./pages/Favorites";
 import { AssignWorkouts } from "./pages/AssignWorkouts";
 import { AssignedWorkouts } from "./pages/AssignedWorkouts";
+import { Exercises } from "./pages/Exercises";
+import { ExerciseDetails } from "./pages/ExerciseDetails";
 
 
 export const router = createBrowserRouter([
-	{
-		path: "/",
-		element: <Layout />,
-		children: [
-			{
-				path: "/",
-				element: <Navigate to="/login" replace />
-			},
-			{
-				path: "/signup",
-				element: <Signup />
-			},
-			{
-				path: "/login",
-				element: <Login />
-			},
-			{
-				path: "/private",
-				element: <Private />
-			},
-			{
-				path: "/create-class",
-				element: <CreateClass />
-			},
-			{
-				path: "/create-routine",
-				element: <CreateRoutine />
-			},
-			{
-				path: "/classes",
-				element: <Classes />
-			},
-			{
-				path: "/classes/:id",
-				element: <ClassDetails />
-			},
-			{
-				path: "/routines",
-				element: <Routines />
-			},
-			{
-				path: "/routines/:id",
-				element: <RoutineDetails />
-			},
-			{
-				path: "/editar-perfil",
-				element: <EditarPerfil />
-			},
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      {
+        path: "/",
+        element: <Navigate to="/login" replace />
+      },
+      {
+        path: "/signup",
+        element: <Signup />
+      },
+      {
+        path: "/login",
+        element: <Login />
+      },
+      {
+        path: "/private",
+        element: <Private />
+      },
+      {
+        path: "/create-class",
+        element: <CreateClass />
+      },
+      {
+        path: "/create-routine",
+        element: <CreateRoutine />
+      },
+      {
+        path: "/classes",
+        element: <Classes />
+      },
+      {
+        path: "/classes/:id",
+        element: <ClassDetails />
+      },
+      {
+        path: "/routines",
+        element: <Routines />
+      },
+      {
+        path: "/routines/:id",
+        element: <RoutineDetails />
+      },
+      {
+        path: "/editar-perfil",
+        element: <EditarPerfil />
+      },
 
-			{
-				path: "/perfil",
-				element: <VerPerfil />
-			},
-			{
-				path: "/favorites",
-				element: <Favorites />
-			},
-			{
-				path: "/assign-workouts",
-				element: <AssignWorkouts />
-			},
-			{
-				path: "/assigned-workouts",
-				element: <AssignedWorkouts />
-			}
-		]
-	}
+      {
+        path: "/perfil",
+        element: <VerPerfil />
+      },
+      {
+        path: "/favorites",
+        element: <Favorites />
+      },
+      {
+        path: "/assign-workouts",
+        element: <AssignWorkouts />
+      },
+      {
+        path: "/assigned-workouts",
+        element: <AssignedWorkouts />
+      },
+      {
+        path: "/exercises",
+        element: <Exercises />
+      },
+      {
+        path: "/exercises/:id",
+        element: <ExerciseDetails />
+      },
+
+    ]
+  }
 ]);

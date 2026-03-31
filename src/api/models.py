@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, Integer, Text, ForeignKey
+from sqlalchemy import String, Boolean, Integer, Text, ForeignKey, inspect
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from flask_bcrypt import Bcrypt
 
@@ -110,6 +110,15 @@ class GymClass(db.Model):
         }
 
 
+routine_exercises = db.Table(
+    "routine_exercises",
+    db.Column("routine_id", db.Integer, db.ForeignKey(
+        "routine.id"), primary_key=True),
+    db.Column("exercise_id", db.Integer, db.ForeignKey(
+        "exercises.id"), primary_key=True)
+)
+
+
 class Routine(db.Model):
     __tablename__ = "routine"
 
@@ -119,7 +128,6 @@ class Routine(db.Model):
     goal: Mapped[str] = mapped_column(String(120), nullable=False)
     level: Mapped[str] = mapped_column(String(50), nullable=False)
     estimated_time: Mapped[int] = mapped_column(Integer, nullable=False)
-    exercises: Mapped[str] = mapped_column(Text, nullable=False)
     muscle_group: Mapped[str] = mapped_column(String(50), nullable=True)
 
     trainer_id: Mapped[int] = mapped_column(
@@ -129,6 +137,8 @@ class Routine(db.Model):
         "Favorites_Routines", back_populates="routine", cascade="all, delete-orphan")
     assigned_routines = relationship(
         "Assigned_Routines", back_populates="routine", cascade="all, delete-orphan")
+    exercises = relationship("Exercise", secondary=routine_exercises,
+                             lazy="subquery", backref=db.backref("routines", lazy=True))
 
     def serialize(self):
         return {
@@ -138,7 +148,7 @@ class Routine(db.Model):
             "goal": self.goal,
             "level": self.level,
             "estimated_time": self.estimated_time,
-            "exercises": self.exercises,
+            "exercises": [exercise.serialize() for exercise in self.exercises],
             "muscle_group": self.muscle_group,
             "trainer_id": self.trainer_id,
             "trainer_email": self.trainer.email if self.trainer else None
@@ -241,4 +251,26 @@ class Assigned_Classes(db.Model):
             "user_name": self.user.name if self.user else None,
             "user_email": self.user.email if self.user else None
         }
-    
+
+
+class Exercise(db.Model):
+    __tablename__ = "exercises"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    zone: Mapped[str] = mapped_column(String(120), nullable=False)
+    equipment: Mapped[str] = mapped_column(String(120), nullable=False)
+    execution: Mapped[str] = mapped_column(Text, nullable=False)
+    preparation: Mapped[str] = mapped_column(Text, nullable=False)
+    image_url: Mapped[str] = mapped_column(String(255), nullable=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "zone": self.zone,
+            "equipment": self.equipment,
+            "execution": self.execution,
+            "preparation": self.preparation,
+            "image_url": self.image_url
+        }
