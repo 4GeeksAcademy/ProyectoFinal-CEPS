@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-from api.models import db, User, GymClass, Routine, Favorites_Routines, Favorites_Classes, Assigned_Routines, Assigned_Classes
+from api.models import db, User, GymClass, Routine, Favorites_Routines, Favorites_Classes, Assigned_Routines, Assigned_Classes, Exercise
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
@@ -221,10 +221,16 @@ def create_routine():
         goal=body.get("goal"),
         level=body.get("level"),
         estimated_time=int(body.get("estimated_time")),
-        exercises=body.get("exercises"),
         muscle_group=body.get("muscle_group"),
         trainer_id=current_user.id
     )
+
+    # Asignar relación N:M si enviaron lista de IDs de ejercicios
+    exercises_ids = body.get("exercises", [])
+    if isinstance(exercises_ids, list) and len(exercises_ids) > 0:
+        selected_exercises = Exercise.query.filter(
+            Exercise.id.in_(exercises_ids)).all()
+        new_routine.exercises = selected_exercises
 
     db.session.add(new_routine)
     db.session.commit()
@@ -273,7 +279,7 @@ def my_routines():
 
     if not current_user:
         return jsonify({"msg": "Usuario no encontrado"}), 404
-
+  
     if current_user.role != "trainer":
         return jsonify({"msg": "Solo los entrenadores pueden ver sus rutinas"}), 403
 
@@ -714,3 +720,122 @@ def get_users():
 
     users = User.query.filter_by(role="user").all()
     return jsonify([user.serialize() for user in users]), 200
+
+
+# ==========================================
+# RUTAS PARA EJERCICIOS (CRUD)
+# ==========================================
+
+@api.route("/exercises", methods=["GET"])
+def get_exercises():
+    exercises = Exercise.query.all()
+    return jsonify([exercise.serialize() for exercise in exercises]), 200
+
+
+@api.route("/exercises/<int:exercise_id>", methods=["GET"])
+def get_exercise(exercise_id):
+    exercise = Exercise.query.get(exercise_id)
+
+    if not exercise:
+        return jsonify({"msg": "Ejercicio no encontrado"}), 404
+
+    return jsonify(exercise.serialize()), 200
+
+
+@api.route("/exercises", methods=["POST"])
+@jwt_required()
+def create_exercise():
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden crear ejercicios"}), 403
+
+    body = request.get_json()
+    if not body:
+        return jsonify({"msg": "Body vacío"}), 400
+
+    required_fields = ["name", "zone", "equipment", "execution", "preparation"]
+    for field in required_fields:
+        if not body.get(field):
+            return jsonify({"msg": f"El campo '{field}' es requerido"}), 400
+
+    new_exercise = Exercise(
+        name=body.get("name"),
+        zone=body.get("zone"),
+        equipment=body.get("equipment"),
+        execution=body.get("execution"),
+        preparation=body.get("preparation"),
+        image_url=body.get("image_url")
+    )
+
+    try:
+        db.session.add(new_exercise)
+        db.session.commit()
+        return jsonify({
+            "msg": "Ejercicio creado exitosamente",
+            "exercise": new_exercise.serialize()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al crear el ejercicio", "error": str(e)}), 500
+
+
+@api.route("/exercises/<int:exercise_id>", methods=["PUT"])
+@jwt_required()
+def update_exercise(exercise_id):
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden modificar ejercicios"}), 403
+
+    exercise = Exercise.query.get(exercise_id)
+    if not exercise:
+        return jsonify({"msg": "Ejercicio no encontrado"}), 404
+
+    body = request.get_json()
+    if not body:
+        return jsonify({"msg": "Body vacío"}), 400
+
+    if "name" in body:
+        exercise.name = body.get("name")
+    if "zone" in body:
+        exercise.zone = body.get("zone")
+    if "equipment" in body:
+        exercise.equipment = body.get("equipment")
+    if "execution" in body:
+        exercise.execution = body.get("execution")
+    if "preparation" in body:
+        exercise.preparation = body.get("preparation")
+    if "image_url" in body:
+        exercise.image_url = body.get("image_url")
+
+    try:
+        db.session.commit()
+        return jsonify({
+            "msg": "Ejercicio actualizado exitosamente",
+            "exercise": exercise.serialize()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al actualizar el ejercicio", "error": str(e)}), 500
+
+
+@api.route("/exercises/<int:exercise_id>", methods=["DELETE"])
+@jwt_required()
+def delete_exercise(exercise_id):
+    current_user = get_current_user()
+
+    if not current_user or current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden eliminar ejercicios"}), 403
+
+    exercise = Exercise.query.get(exercise_id)
+    if not exercise:
+        return jsonify({"msg": "Ejercicio no encontrado"}), 404
+
+    try:
+        db.session.delete(exercise)
+        db.session.commit()
+        return jsonify({"msg": "Ejercicio eliminado exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al eliminar el ejercicio", "error": str(e)}), 500
