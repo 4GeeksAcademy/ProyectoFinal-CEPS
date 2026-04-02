@@ -92,7 +92,7 @@ export const CreateClass = () => {
         <input className="form-control mb-2" type="number" name="capacity" placeholder="Capacidad" value={form.capacity} onChange={handleChange} required />
         <input className="form-control mb-2" name="level" placeholder="Nivel" value={form.level} onChange={handleChange} required />
         <input className="form-control mb-2" name="location" placeholder="Ubicación" value={form.location} onChange={handleChange} />
-        <input className="form-control mb-2" name="image_url" placeholder="URL de imagen" value={form.image_url} onChange={handleChange} />
+        <input className="form-control mb-2" name="image_url" placeholder="URL del video de YouTube (o imagen)" value={form.image_url} onChange={handleChange} />
         <button className="btn btn-primary" disabled={loading}>
           {loading ? "Creando..." : "Crear clase"}
         </button>
