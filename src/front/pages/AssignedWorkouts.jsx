@@ -150,7 +150,7 @@ Fecha: ${assigned.assigned_date || "Sin fecha"}`,
                                         to={`/routines/${assigned.routine?.id}`}
                                         className="btn btn-outline-primary btn-sm mt-2"
                                     >
-                                        Ver rutina
+                                        Ver detalles de la rutina
                                     </Link>
                                 </div>
                             ))}
@@ -177,7 +177,7 @@ Fecha: ${assigned.assigned_date || "Sin fecha"}`,
                                             to={`/classes/${assigned.class?.id}`}
                                             className="btn btn-outline-success btn-sm"
                                         >
-                                            Ver clase
+                                            Ver detalles de la clase
                                         </Link>
 
                                         <button

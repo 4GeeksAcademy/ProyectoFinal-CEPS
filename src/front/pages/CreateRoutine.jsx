@@ -22,7 +22,7 @@ export const CreateRoutine = () => {
   const [allExercises, setAllExercises] = useState([]);
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [showExerciseSelection, setShowExerciseSelection] = useState(false);
-  const [filterZone, setFilterZone] = useState("");
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -69,10 +69,18 @@ export const CreateRoutine = () => {
     setSelectedExercises(selectedExercises.filter((ex) => ex.id !== id));
   };
 
-  // Ejercicios filtrados por grupo muscular
-  const filteredExercises = filterZone
-    ? allExercises.filter((ex) => ex.zone.toLowerCase().includes(filterZone.toLowerCase()))
-    : allExercises;
+  const muscleGroupLabels = {
+    chest: "pecho",
+    legs: "piernas",
+    back: "espalda",
+    shoulders: "hombros",
+    arms: "brazos",
+    core: "abdomen"
+  };
+
+  const filteredExercises = selectedMuscleGroup === "all"
+    ? allExercises
+    : allExercises.filter((ex) => ex.zone?.toLowerCase().includes(muscleGroupLabels[selectedMuscleGroup]));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,7 +128,15 @@ export const CreateRoutine = () => {
           </button>
         </div>
 
-        <input type="text" className="form-control mb-4" placeholder="Filtrar por grupo muscular (Ej: Pecho, Pierna...)" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} />
+        <select className="form-select mb-4" value={selectedMuscleGroup} onChange={(e) => setSelectedMuscleGroup(e.target.value)}>
+          <option value="all">Todos</option>
+          <option value="chest">Pecho</option>
+          <option value="legs">Piernas</option>
+          <option value="back">Espalda</option>
+          <option value="shoulders">Hombros</option>
+          <option value="arms">Brazos</option>
+          <option value="core">Abdomen</option>
+        </select>
 
         <div className="row">
           {filteredExercises.map((ex) => (
@@ -160,12 +176,65 @@ export const CreateRoutine = () => {
 
       <form onSubmit={handleSubmit} className="mt-4">
         <div className="row mb-3">
-          <div className="col-md-6"><input className="form-control mb-2" name="name" placeholder="Nombre de la Rutina" value={form.name} onChange={handleChange} required /></div>
-          <div className="col-md-6"><input className="form-control mb-2" name="goal" placeholder="Objetivo (Ej: Hipertrofia)" value={form.goal} onChange={handleChange} required /></div>
-          <div className="col-md-6"><input className="form-control mb-2" name="level" placeholder="Nivel (Ej: Principiante)" value={form.level} onChange={handleChange} required /></div>
-          <div className="col-md-6"><input className="form-control mb-2" type="number" name="estimated_time" placeholder="Tiempo estimado (minutos)" value={form.estimated_time} onChange={handleChange} required /></div>
-          <div className="col-md-12"><input className="form-control mb-2" name="muscle_group" placeholder="Grupo muscular principal de la rutina" value={form.muscle_group} onChange={handleChange} required /></div>
-          <div className="col-md-12"><textarea className="form-control mb-2" name="description" placeholder="Descripción" value={form.description} onChange={handleChange} required /></div>
+          <div className="col-md-2">
+            <label className="form-label fw-bold">Nombre</label>
+          </div>
+          <div className="col-md-10">
+            <input className="form-control" name="name" value={form.name} onChange={handleChange} required />
+          </div>
+        </div>
+        <div className="row mb-3">
+          <div className="col-md-2">
+            <label className="form-label fw-bold">Descripción</label>
+          </div>
+          <div className="col-md-10">
+            <textarea className="form-control" name="description" value={form.description} onChange={handleChange} required />
+          </div>
+        </div>
+        <div className="row mb-3">
+          <div className="col-md-2">
+            <label className="form-label fw-bold">Objetivo</label>
+          </div>
+          <div className="col-md-10">
+            <input className="form-control" name="goal" value={form.goal} onChange={handleChange} required />
+          </div>
+        </div>
+        <div className="row mb-3">
+          <div className="col-md-2">
+            <label className="form-label fw-bold">Nivel</label>
+          </div>
+          <div className="col-md-10">
+            <select className="form-select" name="level" value={form.level} onChange={handleChange} required>
+              <option value="" disabled>Selecciona el nivel</option>
+              <option value="Principiante">Principiante</option>
+              <option value="Intermedio">Intermedio</option>
+              <option value="Avanzado">Avanzado</option>
+            </select>
+          </div>
+        </div>
+        <div className="row mb-3">
+          <div className="col-md-2">
+            <label className="form-label fw-bold">Tiempo Estimado (minutos)</label>
+          </div>
+          <div className="col-md-10">
+            <input className="form-control" type="number" name="estimated_time" value={form.estimated_time} onChange={handleChange} required />
+          </div>
+        </div>
+        <div className="row mb-3">
+          <div className="col-md-2">
+            <label className="form-label fw-bold">Grupo Muscular</label>
+          </div>
+          <div className="col-md-10">
+            <select className="form-select" name="muscle_group" value={form.muscle_group} onChange={handleChange} required>
+              <option value="" disabled>Selecciona el grupo muscular</option>
+              <option value="chest">Pecho</option>
+              <option value="legs">Piernas</option>
+              <option value="back">Espalda</option>
+              <option value="shoulders">Hombros</option>
+              <option value="arms">Brazos</option>
+              <option value="core">Abdomen</option>
+            </select>
+          </div>
         </div>
 
         <div className="card mb-4">
@@ -179,7 +248,14 @@ export const CreateRoutine = () => {
           </ul>
         </div>
 
-        <button className="btn btn-success w-100 py-2" disabled={loading}>{loading ? "Creando..." : "Crear Rutina"}</button>
+        <div className="d-flex gap-2">
+          <button type="submit" className="btn btn-success flex-fill py-2" disabled={loading}>
+            {loading ? "Creando..." : "Crear Rutina"}
+          </button>
+          <button type="button" className="btn btn-secondary flex-fill py-2" onClick={() => navigate("/private")}>
+            Cancelar
+          </button>
+        </div>
       </form>
     </div>
   );

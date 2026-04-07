@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 
 export const ExerciseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromRoutine = searchParams.get("from") === "routine";
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const [exercise, setExercise] = useState(null);
@@ -91,9 +93,16 @@ export const ExerciseDetails = () => {
         </div>
       </div>
 
-      <Link to="/exercises" className="btn btn-secondary mt-4">
-        Volver al Banco de Ejercicios
-      </Link>
+      <div className="d-flex gap-2 mt-4">
+        {fromRoutine && (
+          <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+            Volver a la rutina
+          </button>
+        )}
+        <Link to="/exercises" className="btn btn-outline-secondary">
+          Ir al Banco de Ejercicios
+        </Link>
+      </div>
     </div>
   );
 };

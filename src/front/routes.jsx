@@ -8,6 +8,8 @@ import { Login } from "./pages/login";
 import { Private } from "./pages/private";
 import { CreateClass } from "./pages/CreateClass";
 import { CreateRoutine } from "./pages/CreateRoutine";
+import { EditClass } from "./pages/EditClass";
+import { EditRoutine } from "./pages/EditRoutine";
 import { Classes } from "./pages/Classes";
 import { ClassDetails } from "./pages/ClassDetails";
 import { Routines } from "./pages/Routines";
@@ -57,12 +59,20 @@ export const router = createBrowserRouter([
         element: <Classes />
       },
       {
+        path: "/classes/:id/edit",
+        element: <EditClass />
+      },
+      {
         path: "/classes/:id",
         element: <ClassDetails />
       },
       {
         path: "/routines",
         element: <Routines />
+      },
+      {
+        path: "/routines/:id/edit",
+        element: <EditRoutine />
       },
       {
         path: "/routines/:id",

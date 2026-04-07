@@ -173,6 +173,75 @@ def get_class(class_id):
     return jsonify(gym_class.serialize()), 200
 
 
+@api.route("/classes/<int:class_id>", methods=["PUT"])
+@jwt_required()
+def update_class(class_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden editar clases"}), 403
+
+    gym_class = GymClass.query.get(class_id)
+    if not gym_class:
+        return jsonify({"msg": "Clase no encontrada"}), 404
+
+    if gym_class.trainer_id != current_user.id:
+        return jsonify({"msg": "Solo el entrenador creador puede editar esta clase"}), 403
+
+    body = request.get_json()
+    if not body:
+        return jsonify({"msg": "Body vacío"}), 400
+
+    fields = ["title", "description", "category", "date", "time",
+              "duration", "capacity", "level", "location", "image_url"]
+    for field in fields:
+        if field in body:
+            setattr(gym_class, field, body.get(field))
+
+    try:
+        gym_class.duration = int(body.get("duration", gym_class.duration))
+        gym_class.capacity = int(body.get("capacity", gym_class.capacity))
+    except ValueError:
+        return jsonify({"msg": "Duración y capacidad deben ser números válidos"}), 400
+
+    try:
+        db.session.commit()
+        return jsonify({"msg": "Clase actualizada exitosamente", "class": gym_class.serialize()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al actualizar la clase", "error": str(e)}), 500
+
+
+@api.route("/classes/<int:class_id>", methods=["DELETE"])
+@jwt_required()
+def delete_class(class_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden eliminar clases"}), 403
+
+    gym_class = GymClass.query.get(class_id)
+    if not gym_class:
+        return jsonify({"msg": "Clase no encontrada"}), 404
+
+    if gym_class.trainer_id != current_user.id:
+        return jsonify({"msg": "Solo el entrenador creador puede eliminar esta clase"}), 403
+
+    try:
+        db.session.delete(gym_class)
+        db.session.commit()
+        return jsonify({"msg": "Clase eliminada exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al eliminar la clase", "error": str(e)}), 500
+
+
 @api.route("/classes/<int:class_id>/assigned-users", methods=["GET"])
 @jwt_required()
 def get_class_assigned_users(class_id):
@@ -256,6 +325,88 @@ def get_routine(routine_id):
         return jsonify({"msg": "Rutina no encontrada"}), 404
 
     return jsonify(routine.serialize()), 200
+
+
+@api.route("/routines/<int:routine_id>", methods=["PUT"])
+@jwt_required()
+def update_routine(routine_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden editar rutinas"}), 403
+
+    routine = Routine.query.get(routine_id)
+    if not routine:
+        return jsonify({"msg": "Rutina no encontrada"}), 404
+
+    if routine.trainer_id != current_user.id:
+        return jsonify({"msg": "Solo el entrenador creador puede editar esta rutina"}), 403
+
+    body = request.get_json()
+    if not body:
+        return jsonify({"msg": "Body vacío"}), 400
+
+    required_fields = ["name", "description", "goal",
+                       "level", "estimated_time", "exercises", "muscle_group"]
+    for field in required_fields:
+        if field not in body:
+            return jsonify({"msg": f"El campo '{field}' es requerido"}), 400
+
+    routine.name = body.get("name")
+    routine.description = body.get("description")
+    routine.goal = body.get("goal")
+    routine.level = body.get("level")
+    routine.muscle_group = body.get("muscle_group")
+
+    try:
+        routine.estimated_time = int(body.get("estimated_time"))
+    except (TypeError, ValueError):
+        return jsonify({"msg": "Tiempo estimado debe ser un número válido"}), 400
+
+    exercises_ids = body.get("exercises", [])
+    if isinstance(exercises_ids, list):
+        selected_exercises = Exercise.query.filter(
+            Exercise.id.in_(exercises_ids)).all()
+        routine.exercises = selected_exercises
+    else:
+        return jsonify({"msg": "El campo 'exercises' debe ser una lista"}), 400
+
+    try:
+        db.session.commit()
+        return jsonify({"msg": "Rutina actualizada exitosamente", "routine": routine.serialize()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al actualizar la rutina", "error": str(e)}), 500
+
+
+@api.route("/routines/<int:routine_id>", methods=["DELETE"])
+@jwt_required()
+def delete_routine(routine_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    if current_user.role != "trainer":
+        return jsonify({"msg": "Solo los entrenadores pueden eliminar rutinas"}), 403
+
+    routine = Routine.query.get(routine_id)
+    if not routine:
+        return jsonify({"msg": "Rutina no encontrada"}), 404
+
+    if routine.trainer_id != current_user.id:
+        return jsonify({"msg": "Solo el entrenador creador puede eliminar esta rutina"}), 403
+
+    try:
+        db.session.delete(routine)
+        db.session.commit()
+        return jsonify({"msg": "Rutina eliminada exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al eliminar la rutina", "error": str(e)}), 500
 
 
 @api.route("/my-classes", methods=["GET"])

@@ -275,25 +275,29 @@ export const ClassDetails = () => {
 
       <div className="row">
         <div className="col-md-6">
-          <h4>Usuarios inscritos</h4>
+          {isTrainer && (
+            <>
+              <h4>Usuarios inscritos</h4>
 
-          {assignedUsers.length === 0 ? (
-            <div className="alert alert-info">Aún no hay usuarios inscritos en esta clase.</div>
-          ) : (
-            <ul className="list-group">
-              {assignedUsers.map((assigned) => (
-                <li
-                  key={assigned.id}
-                  className="list-group-item d-flex justify-content-between align-items-center"
-                >
-                  <div>
-                    <strong>{assigned.user_name || "Sin nombre"}</strong>
-                    <br />
-                    <small>{assigned.user_email}</small>
-                  </div>
-                </li>
-              ))}
-            </ul>
+              {assignedUsers.length === 0 ? (
+                <div className="alert alert-info">Aún no hay usuarios inscritos en esta clase.</div>
+              ) : (
+                <ul className="list-group">
+                  {assignedUsers.map((assigned) => (
+                    <li
+                      key={assigned.id}
+                      className="list-group-item d-flex justify-content-between align-items-center"
+                    >
+                      <div>
+                        <strong>{assigned.user_name || "Sin nombre"}</strong>
+                        <br />
+                        <small>{assigned.user_email}</small>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
 
