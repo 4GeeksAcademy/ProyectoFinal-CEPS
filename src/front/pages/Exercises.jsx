@@ -13,6 +13,7 @@ export const Exercises = () => {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
 
   const [showForm, setShowForm] = useState(false);
+  const [editingExercise, setEditingExercise] = useState(null);
   const [form, setForm] = useState({
     name: "",
     zone: "",
@@ -42,16 +43,28 @@ export const Exercises = () => {
     fetchExercises();
   }, [backendUrl]);
 
-  const filteredExercises = selectedMuscleGroup === "all"
-    ? exercises
-    : exercises.filter((exercise) => exercise.zone === selectedMuscleGroup);
+  const filteredExercises =
+    selectedMuscleGroup === "all"
+      ? exercises
+      : exercises.filter((exercise) => exercise.zone === selectedMuscleGroup);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
   };
 
-  const [editingExercise, setEditingExercise] = useState(null); // Nuevo estado para el ejercicio en edición
+  const resetForm = () => {
+    setForm({
+      name: "",
+      zone: "",
+      equipment: "",
+      execution: "",
+      preparation: "",
+      image_url: ""
+    });
+    setEditingExercise(null);
+    setShowForm(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,25 +78,30 @@ export const Exercises = () => {
         : `${backendUrl}/api/exercises`;
 
       const res = await fetch(url, {
-        method: method,
+        method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(form)
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || `Error al ${editingExercise ? "actualizar" : "crear"} ejercicio`);
+      if (!res.ok) {
+        throw new Error(
+          data.msg || `Error al ${editingExercise ? "actualizar" : "crear"} ejercicio`
+        );
+      }
 
       alert(`Ejercicio ${editingExercise ? "actualizado" : "creado"} con éxito`);
+
       if (editingExercise) {
-        setExercises(exercises.map(ex => ex.id === editingExercise.id ? data.exercise : ex));
+        setExercises(exercises.map((ex) => (ex.id === editingExercise.id ? data.exercise : ex)));
       } else {
         setExercises([...exercises, data.exercise]);
       }
-      setShowForm(false);
-      setForm({ name: "", zone: "", equipment: "", execution: "", preparation: "", image_url: "" });
-      setEditingExercise(null); // Limpiar el ejercicio en edición
+
+      resetForm();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -93,204 +111,284 @@ export const Exercises = () => {
 
   const handleEditClick = (exercise) => {
     setEditingExercise(exercise);
-    setForm(exercise); // Cargar los datos del ejercicio en el formulario
+    setForm({
+      name: exercise.name || "",
+      zone: exercise.zone || "",
+      equipment: exercise.equipment || "",
+      execution: exercise.execution || "",
+      preparation: exercise.preparation || "",
+      image_url: exercise.image_url || ""
+    });
     setShowForm(true);
   };
 
   const handleDelete = async (exerciseId) => {
-    if (!confirm("¿Está seguro de eliminar este ejercicio? Esta acción no se puede deshacer.")) {
+    if (!window.confirm("¿Está seguro de eliminar este ejercicio? Esta acción no se puede deshacer.")) {
       return;
     }
 
     try {
       const res = await fetch(`${backendUrl}/api/exercises/${exerciseId}`, {
         method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!res.ok) throw new Error("Error al eliminar el ejercicio");
 
       alert("Ejercicio eliminado con éxito");
-      setExercises(exercises.filter(ex => ex.id !== exerciseId));
+      setExercises(exercises.filter((ex) => ex.id !== exerciseId));
     } catch (err) {
       setError(err.message);
     }
   };
 
-  if (loading) return <div className="container mt-5 text-center">Cargando ejercicios...</div>;
+  if (loading) {
+    return (
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-empty-state gp-card">
+            <div className="gp-list-spinner"></div>
+            <p>Cargando ejercicios...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mt-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Banco de Ejercicios</h2>
-        {user?.role === "trainer" && !editingExercise && ( // Mostrar botón de crear solo si no estamos editando
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? "Cancelar" : "+ Crear Ejercicio"}
-          </button>
-        )}
-      </div>
-      {error && <div className="alert alert-danger">{error}</div>}
+    <div className="gp-list-page">
+      <div className="gp-list-shell">
+        <section className="gp-list-hero gp-card">
+          <div>
+            <div className="gp-eyebrow">EXERCISE LIBRARY</div>
+            <h1 className="gp-list-title">BANCO DE EJERCICIOS</h1>
+            <p className="gp-list-subtitle">
+              Explora ejercicios, filtra por grupo muscular y mantén tu biblioteca siempre organizada.
+            </p>
+          </div>
 
-      {!showForm && (
-        <div className="mb-4">
-          <label className="form-label fw-bold">Filtrar por grupo muscular</label>
-          <select
-            className="form-select"
-            value={selectedMuscleGroup}
-            onChange={(e) => setSelectedMuscleGroup(e.target.value)}
-          >
-            <option value="all">Todos</option>
-            <option value="Pecho">Pecho</option>
-            <option value="Espalda">Espalda</option>
-            <option value="Hombros">Hombros</option>
-            <option value="Bíceps">Bíceps</option>
-            <option value="Tríceps">Tríceps</option>
-            <option value="Antebrazos">Antebrazos</option>
-            <option value="Abdomen">Abdomen</option>
-            <option value="Cuádriceps">Cuádriceps</option>
-            <option value="Isquiotibiales">Isquiotibiales</option>
-            <option value="Glúteos">Glúteos</option>
-            <option value="Pantorrillas">Pantorrillas</option>
-            <option value="Cuerpo Completo">Cuerpo Completo</option>
-          </select>
-        </div>
-      )}
-
-      {showForm && (
-        <div className="card p-4 mb-4 shadow-sm">
-          <h4>{editingExercise ? "Editar Ejercicio" : "Nuevo Ejercicio"}</h4>
-          <form onSubmit={handleSubmit}>
-            <div className="row mb-3">
-              <div className="col-md-2">
-                <label className="form-label fw-bold">Nombre</label>
-              </div>
-              <div className="col-md-10">
-                <input className="form-control" name="name" value={form.name} onChange={handleChange} required />
-              </div>
-            </div>
-            <div className="row mb-3">
-              <div className="col-md-2">
-                <label className="form-label fw-bold">Zona Muscular</label>
-              </div>
-              <div className="col-md-10">
-                <select className="form-select" name="zone" value={form.zone} onChange={handleChange} required>
-                  <option value="" disabled>Selecciona la Zona Muscular</option>
-                  <option value="Pecho">Pecho</option>
-                  <option value="Espalda">Espalda</option>
-                  <option value="Hombros">Hombros</option>
-                  <option value="Bíceps">Bíceps</option>
-                  <option value="Tríceps">Tríceps</option>
-                  <option value="Antebrazos">Antebrazos</option>
-                  <option value="Abdomen">Abdomen</option>
-                  <option value="Cuádriceps">Cuádriceps</option>
-                  <option value="Isquiotibiales">Isquiotibiales</option>
-                  <option value="Glúteos">Glúteos</option>
-                  <option value="Pantorrillas">Pantorrillas</option>
-                  <option value="Cuerpo Completo">Cuerpo Completo</option>
-                </select>
-              </div>
-            </div>
-            <div className="row mb-3">
-              <div className="col-md-2">
-                <label className="form-label fw-bold">Equipamiento</label>
-              </div>
-              <div className="col-md-10">
-                <input className="form-control" name="equipment" value={form.equipment} onChange={handleChange} required />
-              </div>
-            </div>
-            <div className="row mb-3">
-              <div className="col-md-2">
-                <label className="form-label fw-bold">URL de Imagen/GIF</label>
-              </div>
-              <div className="col-md-10">
-                <input className="form-control" name="image_url" value={form.image_url} onChange={handleChange} required />
-              </div>
-            </div>
-            <div className="row mb-3">
-              <div className="col-md-2">
-                <label className="form-label fw-bold">Preparación</label>
-              </div>
-              <div className="col-md-10">
-                <textarea className="form-control" name="preparation" value={form.preparation} onChange={handleChange} required />
-              </div>
-            </div>
-            <div className="row mb-3">
-              <div className="col-md-2">
-                <label className="form-label fw-bold">Ejecución</label>
-              </div>
-              <div className="col-md-10">
-                <textarea className="form-control" name="execution" value={form.execution} onChange={handleChange} required />
-              </div>
-            </div>
-            <div className="d-flex gap-2">
-              <button type="submit" className="btn btn-success flex-fill py-2" disabled={submitting}>
-                {submitting ? "Guardando..." : (editingExercise ? "Actualizar Ejercicio" : "Guardar Ejercicio")}
+          <div className="gp-list-hero-actions">
+            {user?.role === "trainer" && !showForm && (
+              <button className="gp-btn-primary" onClick={() => setShowForm(true)}>
+                Crear ejercicio
               </button>
-              {editingExercise && <button type="button" className="btn btn-secondary flex-fill py-2" onClick={() => { setShowForm(false); setEditingExercise(null); setForm({ name: "", zone: "", equipment: "", execution: "", preparation: "", image_url: "" }); }}>Cancelar</button>}
-            </div>
-          </form>
-        </div>
-      )}
+            )}
+            <Link to="/private" className="gp-btn-secondary">
+              Volver
+            </Link>
+          </div>
+        </section>
 
-      {filteredExercises.length === 0 ? (
-        <div className="text-center py-5">
-          <i className="fas fa-dumbbell fa-4x text-muted mb-3"></i>
-          <h4 className="text-muted">No hay ejercicios disponibles</h4>
-          <p className="text-muted">
-            {selectedMuscleGroup === "all"
-              ? "En este momento no hay ejercicios cargados. Vuelve más tarde para ver nuevos ejercicios."
-              : `No hay ejercicios para el grupo muscular "${selectedMuscleGroup}".`
-            }
-          </p>
-          {user?.role === "trainer" && (
-            <button className="btn btn-primary mt-3" onClick={() => setShowForm(true)}>
-              Crear ejercicio
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="row">
-          {filteredExercises.map((exercise) => (
-            <div className="col-md-4 mb-4" key={exercise.id}>
-              <div className="card h-100 shadow-sm">
-                {exercise.image_url ? (
-                  <div
-                    className="card-img-top"
-                    style={{
-                      height: "200px",
-                      backgroundImage: `url(${exercise.image_url})`,
-                      backgroundSize: "contain",
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "center",
-                    }}
-                  ></div>
-                ) : null}
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title text-primary">{exercise.name}</h5>
-                  <h6 className="card-subtitle mb-2 text-muted">Zona: {exercise.zone}</h6>
-                  <p className="card-text mb-1"><strong>Equipamiento:</strong> {exercise.equipment}</p>
-                  <p className="card-text small text-truncate mb-3"><strong>Ejecución:</strong> {exercise.execution}</p>
-                  <div className="mt-auto d-flex justify-content-between align-items-center">
-                    <Link to={`/exercises/${exercise.id}`} className="btn btn-sm btn-outline-primary">
-                      Ver Detalles
-                    </Link>
-                    {user?.role === "trainer" && (
-                      <div className="d-flex gap-2">
-                        <button className="btn btn-sm btn-warning" onClick={() => handleEditClick(exercise)}>
-                          Editar
-                        </button>
-                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(exercise.id)}>
-                          Eliminar
-                        </button>
-                      </div>
-                    )}
-                  </div>
+        {error && <div className="gp-auth-error">{error}</div>}
+
+        {showForm && (
+          <form onSubmit={handleSubmit} className="gp-form gp-card" noValidate>
+            <div className="gp-form-section">
+              <h3>{editingExercise ? "Editar ejercicio" : "Nuevo ejercicio"}</h3>
+
+              <div className="gp-form-grid">
+                <div className="gp-form-field">
+                  <label>Nombre</label>
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="Nombre del ejercicio"
+                    required
+                  />
+                </div>
+
+                <div className="gp-form-field">
+                  <label>Zona muscular</label>
+                  <select name="zone" value={form.zone} onChange={handleChange} required>
+                    <option value="">Selecciona la zona muscular</option>
+                    <option value="Pecho">Pecho</option>
+                    <option value="Espalda">Espalda</option>
+                    <option value="Hombros">Hombros</option>
+                    <option value="Bíceps">Bíceps</option>
+                    <option value="Tríceps">Tríceps</option>
+                    <option value="Antebrazos">Antebrazos</option>
+                    <option value="Abdomen">Abdomen</option>
+                    <option value="Cuádriceps">Cuádriceps</option>
+                    <option value="Isquiotibiales">Isquiotibiales</option>
+                    <option value="Glúteos">Glúteos</option>
+                    <option value="Pantorrillas">Pantorrillas</option>
+                    <option value="Cuerpo Completo">Cuerpo Completo</option>
+                  </select>
                 </div>
               </div>
+
+              <div className="gp-form-field">
+                <label>Equipamiento</label>
+                <input
+                  name="equipment"
+                  value={form.equipment}
+                  onChange={handleChange}
+                  placeholder="Ej: mancuernas, barra, banco"
+                  required
+                />
+              </div>
+
+              <div className="gp-form-field">
+                <label>URL de imagen o GIF</label>
+                <input
+                  name="image_url"
+                  value={form.image_url}
+                  onChange={handleChange}
+                  placeholder="Pega la URL de la imagen"
+                  required
+                />
+              </div>
+
+              <div className="gp-form-field">
+                <label>Preparación</label>
+                <textarea
+                  name="preparation"
+                  value={form.preparation}
+                  onChange={handleChange}
+                  placeholder="Explica cómo prepararse para el ejercicio"
+                  required
+                />
+              </div>
+
+              <div className="gp-form-field">
+                <label>Ejecución</label>
+                <textarea
+                  name="execution"
+                  value={form.execution}
+                  onChange={handleChange}
+                  placeholder="Explica cómo ejecutar correctamente el ejercicio"
+                  required
+                />
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className="gp-form-actions">
+              <button type="submit" className="gp-btn-primary" disabled={submitting}>
+                {submitting
+                  ? "Guardando..."
+                  : editingExercise
+                  ? "Actualizar ejercicio"
+                  : "Guardar ejercicio"}
+              </button>
+
+              <button
+                type="button"
+                className="gp-btn-secondary"
+                onClick={resetForm}
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        )}
+
+        {!showForm && (
+          <>
+            <div className="gp-filter-bar gp-card">
+              <span>Filtrar:</span>
+
+              {[
+                { value: "all", label: "Todos" },
+                { value: "Pecho", label: "Pecho" },
+                { value: "Espalda", label: "Espalda" },
+                { value: "Hombros", label: "Hombros" },
+                { value: "Bíceps", label: "Bíceps" },
+                { value: "Tríceps", label: "Tríceps" },
+                { value: "Antebrazos", label: "Antebrazos" },
+                { value: "Abdomen", label: "Abdomen" },
+                { value: "Cuádriceps", label: "Cuádriceps" },
+                { value: "Isquiotibiales", label: "Isquiotibiales" },
+                { value: "Glúteos", label: "Glúteos" },
+                { value: "Pantorrillas", label: "Pantorrillas" },
+                { value: "Cuerpo Completo", label: "Cuerpo Completo" }
+              ].map((group) => (
+                <button
+                  key={group.value}
+                  className={`gp-filter-btn ${selectedMuscleGroup === group.value ? "active" : ""}`}
+                  onClick={() => setSelectedMuscleGroup(group.value)}
+                  type="button"
+                >
+                  {group.label}
+                </button>
+              ))}
+            </div>
+
+            {filteredExercises.length === 0 ? (
+              <div className="gp-empty-state gp-card">
+                <div className="gp-empty-icon">
+                  <i className="fas fa-dumbbell"></i>
+                </div>
+                <h3>No hay ejercicios disponibles</h3>
+                <p>
+                  {selectedMuscleGroup === "all"
+                    ? "En este momento no hay ejercicios cargados. Vuelve más tarde para ver nuevos ejercicios."
+                    : `No hay ejercicios para el grupo muscular "${selectedMuscleGroup}".`}
+                </p>
+
+                {user?.role === "trainer" && (
+                  <button className="gp-btn-primary" onClick={() => setShowForm(true)}>
+                    Crear ejercicio
+                  </button>
+                )}
+              </div>
+            ) : (
+              <section className="gp-classes-grid">
+                {filteredExercises.map((exercise) => (
+                  <article className="gp-class-card gp-card" key={exercise.id}>
+                    {exercise.image_url ? (
+                      <div className="gp-class-media">
+                        <img src={exercise.image_url} alt={exercise.name} />
+                      </div>
+                    ) : null}
+
+                    <div className="gp-class-content">
+                      <div className="gp-class-meta">
+                        <span>{exercise.zone}</span>
+                      </div>
+
+                      <h3>{exercise.name}</h3>
+
+                      <div className="gp-class-info">
+                        <div className="gp-class-info-item">
+                          <span>Equipamiento</span>
+                          <strong>{exercise.equipment}</strong>
+                        </div>
+                      </div>
+
+                      <div className="gp-class-actions">
+                        <Link to={`/exercises/${exercise.id}`} className="gp-btn-primary">
+                          Ver detalles
+                        </Link>
+
+                        {user?.role === "trainer" && (
+                          <>
+                            <button
+                              className="gp-btn-secondary"
+                              onClick={() => handleEditClick(exercise)}
+                              type="button"
+                            >
+                              Editar
+                            </button>
+
+                            <button
+                              className="gp-class-delete"
+                              onClick={() => handleDelete(exercise.id)}
+                              type="button"
+                            >
+                              Eliminar
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </section>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

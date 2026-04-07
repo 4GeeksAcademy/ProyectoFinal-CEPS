@@ -1,18 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import useGlobalReducer from '../hooks/useGlobalReducer'; // Hook para acceder al estado global
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const FavoritesClasses = () => {
-  const { store } = useGlobalReducer(); // Usamos el hook para obtener el store global
-  const { token } = store; // Sacamos el token del store. ¡Lo necesitaremos para la autorización!
+  const { store } = useGlobalReducer();
+  const { token } = store;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // Estados locales del componente
-  const [favoriteClasses, setFavoriteClasses] = useState([]); // Para guardar las clases favoritas
-  const [loading, setLoading] = useState(true); // Para mostrar un spinner mientras se cargan los datos
-  const [error, setError] = useState(""); // Para mostrar mensajes de error
+  const [favoriteClasses, setFavoriteClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Función para obtener las clases favoritas desde el backend
   const getFavoriteClasses = async () => {
     try {
       setLoading(true);
@@ -21,7 +19,7 @@ export const FavoritesClasses = () => {
       const response = await fetch(`${backendUrl}/api/favorites_classes`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}` //Enviamos el token para autenticarnos
+          Authorization: `Bearer ${token}`
         }
       });
 
@@ -30,7 +28,7 @@ export const FavoritesClasses = () => {
       }
 
       const data = await response.json();
-      setFavoriteClasses(data); // Guardamos los datos en el estado local del componente
+      setFavoriteClasses(data);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -38,51 +36,99 @@ export const FavoritesClasses = () => {
     }
   };
 
-  // useEffect se ejecuta cuando el componente se monta o cuando una de sus dependencias cambia.
-  // En este caso, queremos que se ejecute cuando el token esté disponible.
   useEffect(() => {
     if (token) {
       getFavoriteClasses();
     } else {
-      setLoading(false); // Si no hay token, no hacemos la llamada y dejamos de cargar
+      setLoading(false);
     }
-  }, [token]); // El array de dependencias. Se volverá a ejecutar si 'token' cambia.
-
-
-  // ------- Renderizado del componente --------
+  }, [token]);
 
   if (loading) {
-    return <div className="container mt-5 text-center">Cargando...</div>;
+    return (
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-empty-state gp-card">
+            <div className="gp-list-spinner"></div>
+            <p>Cargando clases favoritas...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!token) {
-    return <div className="container mt-5 alert alert-warning">Necesitas iniciar sesión para ver tus favoritos.</div>;
+    return (
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-auth-error">Necesitas iniciar sesión para ver tus favoritos.</div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mt-5">
-      <h2>Mis Clases Favoritas</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
-      <div className="row">
+    <div className="gp-list-page">
+      <div className="gp-list-shell">
+        <section className="gp-list-hero gp-card">
+          <div>
+            <div className="gp-eyebrow">FAVORITES</div>
+            <h1 className="gp-list-title">CLASES FAVORITAS</h1>
+            <p className="gp-list-subtitle">
+              Tus clases guardadas para volver más rápido a las sesiones que más te interesan.
+            </p>
+          </div>
+
+          <div className="gp-list-hero-actions">
+            <Link to="/classes" className="gp-btn-primary">
+              Ver todas las clases
+            </Link>
+            <Link to="/private" className="gp-btn-secondary">
+              Volver
+            </Link>
+          </div>
+        </section>
+
+        {error && <div className="gp-auth-error">{error}</div>}
+
         {favoriteClasses.length > 0 ? (
-          favoriteClasses.map((fav) => (
-            <div className="col-md-4 mb-4" key={fav.id}>
-              <div className="card">
-                <div className="card-body">
-                  <h5 className="card-title">{fav.class_title}</h5>
-                  {/* Aquí podrías añadir más detalles de la clase si los devuelves en el serialize del backend */}
-                  <Link to={`/classes/${fav.class_id}`} className="btn btn-primary">
-                    Ver detalles
-                  </Link>
+          <section className="gp-classes-grid">
+            {favoriteClasses.map((fav) => (
+              <article className="gp-class-card gp-card" key={fav.id}>
+                <div className="gp-class-content">
+                  <div className="gp-class-meta">
+                    <span>Favorita</span>
+                    <span>Clase</span>
+                  </div>
+
+                  <h3>{fav.class_title}</h3>
+
+                  <div className="gp-class-info">
+                    <div className="gp-class-info-item">
+                      <span>Estado</span>
+                      <strong>Guardada en favoritos</strong>
+                    </div>
+                  </div>
+
+                  <div className="gp-class-actions">
+                    <Link to={`/classes/${fav.class_id}`} className="gp-btn-primary">
+                      Ver detalles
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))
+              </article>
+            ))}
+          </section>
         ) : (
-          <div className="col-12">
-            <div className="alert alert-info">
-              Aún no has agregado ninguna clase a tus favoritos.
+          <div className="gp-empty-state gp-card">
+            <div className="gp-empty-icon">
+              <i className="fas fa-heart"></i>
             </div>
+            <h3>Aún no has agregado clases favoritas</h3>
+            <p>Cuando marques clases como favoritas aparecerán aquí.</p>
+            <Link to="/classes" className="gp-btn-primary">
+              Explorar clases
+            </Link>
           </div>
         )}
       </div>

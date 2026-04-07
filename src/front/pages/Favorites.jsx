@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import useGlobalReducer from '../hooks/useGlobalReducer'; // Correct hook for global state
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const Favorites = () => {
-  const { store } = useGlobalReducer(); // Use the global reducer hook
+  const { store } = useGlobalReducer();
   const { token } = store;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -11,7 +11,6 @@ export const Favorites = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // OBTENER rutinas favoritas del usuario
   const getFavoriteRoutines = async () => {
     try {
       setLoading(true);
@@ -19,7 +18,7 @@ export const Favorites = () => {
 
       const response = await fetch(`${backendUrl}/api/favorites_routines`, {
         method: "GET",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!response.ok) {
@@ -47,7 +46,7 @@ export const Favorites = () => {
     try {
       const response = await fetch(`${backendUrl}/api/favorites_routines/${routineId}`, {
         method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!response.ok) {
@@ -55,9 +54,7 @@ export const Favorites = () => {
         throw new Error(errorData.msg || "Error al eliminar de favoritos.");
       }
 
-      // Actualizamos el listado removiendo la tarjeta al instante
-      setFavoriteRoutines(favoriteRoutines.filter(fav => fav.routine.id !== routineId));
-
+      setFavoriteRoutines(favoriteRoutines.filter((fav) => fav.routine.id !== routineId));
     } catch (error) {
       alert(error.message);
     }
@@ -65,10 +62,11 @@ export const Favorites = () => {
 
   if (loading) {
     return (
-      <div className="container mt-5">
-        <div className="d-flex justify-content-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-empty-state gp-card">
+            <div className="gp-list-spinner"></div>
+            <p>Cargando rutinas favoritas...</p>
           </div>
         </div>
       </div>
@@ -77,60 +75,93 @@ export const Favorites = () => {
 
   if (!token) {
     return (
-      <div className="container mt-5">
-        <div className="alert alert-warning">Necesitas iniciar sesión para ver tus favoritos.</div>
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-auth-error">Necesitas iniciar sesión para ver tus favoritos.</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mt-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Mis Rutinas Favoritas</h2>
-        <Link to="/routines" className="btn btn-outline-primary">
-          Ver todas las rutinas
-        </Link>
-      </div>
+    <div className="gp-list-page">
+      <div className="gp-list-shell">
+        <section className="gp-list-hero gp-card">
+          <div>
+            <div className="gp-eyebrow">FAVORITES</div>
+            <h1 className="gp-list-title">RUTINAS FAVORITAS</h1>
+            <p className="gp-list-subtitle">
+              Guarda tus rutinas preferidas y vuelve a ellas rápidamente cuando quieras entrenar.
+            </p>
+          </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+          <div className="gp-list-hero-actions">
+            <Link to="/routines" className="gp-btn-primary">
+              Ver todas las rutinas
+            </Link>
+            <Link to="/private" className="gp-btn-secondary">
+              Volver
+            </Link>
+          </div>
+        </section>
 
-      <div className="row">
-        {!loading && favoriteRoutines.length > 0 ? (
-          favoriteRoutines.map((fav) => (
-            <div className="col-md-6 col-lg-4 mb-4" key={fav.id}>
-              <div className="card h-100 shadow-sm">
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">{fav.routine.name}</h5>
-                  <p className="card-text"><strong>Objetivo:</strong> {fav.routine.goal}</p>
-                  <p className="card-text"><strong>Nivel:</strong> {fav.routine.level}</p>
-                  <div className="mt-auto d-flex justify-content-between">
-                    <Link
-                      to={`/routines/${fav.routine.id}`}
-                      className="btn btn-primary"
-                    >
+        {error && <div className="gp-auth-error">{error}</div>}
+
+        {favoriteRoutines.length > 0 ? (
+          <section className="gp-classes-grid">
+            {favoriteRoutines.map((fav) => (
+              <article className="gp-class-card gp-card" key={fav.id}>
+                <div className="gp-class-content">
+                  <div className="gp-class-meta">
+                    <span>Favorita</span>
+                    <span>{fav.routine.level}</span>
+                  </div>
+
+                  <h3>{fav.routine.name}</h3>
+
+                  <div className="gp-class-info">
+                    <div className="gp-class-info-item">
+                      <span>Objetivo</span>
+                      <strong>{fav.routine.goal}</strong>
+                    </div>
+
+                    <div className="gp-class-info-item">
+                      <span>Rutina</span>
+                      <strong>Guardada en favoritos</strong>
+                    </div>
+                  </div>
+
+                  <div className="gp-class-actions">
+                    <Link to={`/routines/${fav.routine.id}`} className="gp-btn-primary">
                       Ver detalles
                     </Link>
+
                     <button
-                      className="btn btn-danger ms-2"
+                      className="gp-class-delete"
                       onClick={() => removeFavorite(fav.routine.id)}
+                      type="button"
                     >
-                      <i className="fas fa-trash-alt"></i>
+                      Quitar
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))
+              </article>
+            ))}
+          </section>
         ) : (
-          <div className="col-12">
-            {!loading && !error && (
-              <div className="alert alert-info">
-                Aún no has agregado ninguna rutina a tus favoritos.
-              </div>
-            )}
+          <div className="gp-empty-state gp-card">
+            <div className="gp-empty-icon">
+              <i className="fas fa-star"></i>
+            </div>
+            <h3>Aún no tienes rutinas favoritas</h3>
+            <p>Guarda tus rutinas preferidas para encontrarlas más rápido.</p>
+            <Link to="/routines" className="gp-btn-primary">
+              Explorar rutinas
+            </Link>
           </div>
         )}
       </div>
     </div>
   );
 };
+

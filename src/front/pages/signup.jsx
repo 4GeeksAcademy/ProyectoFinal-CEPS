@@ -6,6 +6,7 @@ export const Signup = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [role, setRole] = useState("user");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -14,6 +15,18 @@ export const Signup = () => {
         e.preventDefault();
         setLoading(true);
         setError("");
+
+        if (password.length < 6) {
+            setError("La contraseña debe tener al menos 6 caracteres");
+            setLoading(false);
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError("Las contraseñas no coinciden");
+            setLoading(false);
+            return;
+        }
 
         try {
             const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -34,12 +47,11 @@ export const Signup = () => {
             }
 
             if (!response.ok) {
-                throw new Error(data.msg || "Error creating user");
+                throw new Error(data.msg || "Error al crear el usuario");
             }
 
             alert("Usuario creado exitosamente");
             navigate("/login");
-
         } catch (error) {
             setError(error.message);
         } finally {
@@ -48,61 +60,107 @@ export const Signup = () => {
     };
 
     return (
-        <div className="container mt-5">
-            <div className="row justify-content-center">
-                <div className="col-md-6">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="text-center">Registro</h3>
+        <div className="gp-auth-page">
+            <div className="gp-auth-shell">
+                <div
+                    className="gp-auth-visual"
+                    style={{
+                        backgroundImage:
+                            "url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1400&q=80')"
+                    }}
+                >
+                    <div className="gp-auth-visual-overlay"></div>
+
+                    <div className="gp-auth-visual-content">
+                        <div className="gp-auth-kicker">
+                            <span className="gp-auth-kicker-line"></span>
+                            BUILD YOUR ROUTINE
                         </div>
-                        <div className="card-body">
-                            {error && <div className="alert alert-danger">{error}</div>}
 
-                            <form onSubmit={handleSubmit}>
-                                <div className="mb-3">
-                                    <label className="form-label">Correo</label>
-                                    <input
-                                        type="email"
-                                        className="form-control"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                    />
-                                </div>
+                        <h1 className="gp-auth-hero">
+                            CREATE
+                            <br />
+                            YOUR
+                            <br />
+                            <em>POWER</em>
+                        </h1>
 
-                                <div className="mb-3">
-                                    <label className="form-label">Contraseña</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        minLength={6}
-                                        required
-                                    />
-                                </div>
+                        <p className="gp-auth-hero-copy">
+                            Únete a GymPlanner y organiza entrenamientos, clases y progreso en una sola experiencia.
+                        </p>
+                    </div>
+                </div>
 
-                                <div className="mb-3">
-                                    <label className="form-label">Tipo de cuenta</label>
-                                    <select
-                                        className="form-select"
-                                        value={role}
-                                        onChange={(e) => setRole(e.target.value)}
-                                    >
-                                        <option value="user">Usuario</option>
-                                        <option value="trainer">Entrenador</option>
-                                    </select>
-                                </div>
+                <div className="gp-auth-panel">
+                    <div className="gp-auth-panel-inner">
+                        <div className="gp-auth-brand">GYMPLANNER</div>
 
-                                <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-                                    {loading ? "Creando..." : "Crear cuenta"}
-                                </button>
-                            </form>
+                        <h2 className="gp-auth-title">Crear cuenta</h2>
+                        <p className="gp-auth-subtitle">
+                            Crea tu cuenta para comenzar a entrenar sin límites.
+                        </p>
 
-                            <div className="mt-3 text-center">
-                                <Link to="/login">¿Ya tienes cuenta? Inicia sesión</Link>
+                        {error && <div className="gp-auth-error">{error}</div>}
+
+                        <form onSubmit={handleSubmit} className="gp-auth-form">
+                            <div className="gp-auth-field">
+                                <label>Correo</label>
+                                <input
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
                             </div>
-                        </div>
+
+                            <div className="gp-auth-field">
+                                <label>Contraseña</label>
+                                <input
+                                    type="password"
+                                    placeholder="Mínimo 6 caracteres"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    minLength={6}
+                                    required
+                                />
+                            </div>
+
+                            <div className="gp-auth-field">
+                                <label>Confirmar contraseña</label>
+                                <input
+                                    type="password"
+                                    placeholder="Repite tu contraseña"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="gp-auth-field">
+                                <label>Tipo de cuenta</label>
+                                <select
+                                    className="gp-auth-select"
+                                    value={role}
+                                    onChange={(e) => setRole(e.target.value)}
+                                >
+                                    <option value="user">Usuario</option>
+                                    <option value="trainer">Entrenador</option>
+                                </select>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="gp-auth-submit"
+                                disabled={loading}
+                            >
+                                {loading ? "CREANDO..." : "CREAR CUENTA"}
+                            </button>
+                        </form>
+
+                        <p className="gp-auth-switch">
+                            ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
+                        </p>
                     </div>
                 </div>
             </div>

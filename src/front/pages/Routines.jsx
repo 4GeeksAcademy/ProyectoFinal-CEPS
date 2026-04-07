@@ -3,250 +3,257 @@ import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 const muscleGroupLabels = {
-    chest: "Pecho",
-    legs: "Piernas",
-    back: "Espalda",
-    shoulders: "Hombros",
-    arms: "Brazos",
-    core: "Abdomen"
+  chest: "Pecho",
+  legs: "Piernas",
+  back: "Espalda",
+  shoulders: "Hombros",
+  arms: "Brazos",
+  core: "Abdomen"
 };
 
-// Función para convertir de español a inglés para el filtro
 const getEnglishMuscleGroup = (spanishValue) => {
-    const reverseLabels = {
-        "Pecho": "chest",
-        "Piernas": "legs",
-        "Espalda": "back",
-        "Hombros": "shoulders",
-        "Brazos": "arms",
-        "Abdomen": "core",
-        "Todos": "all"
-    };
-    return reverseLabels[spanishValue] || spanishValue;
+  const reverseLabels = {
+    "Pecho": "chest",
+    "Piernas": "legs",
+    "Espalda": "back",
+    "Hombros": "shoulders",
+    "Brazos": "arms",
+    "Abdomen": "core",
+    "Todos": "all"
+  };
+  return reverseLabels[spanishValue] || spanishValue;
 };
 
 export const Routines = () => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const [routines, setRoutines] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("Todos");
-    const [favoriteRoutines, setFavoriteRoutines] = useState([]);
-    const [deletingRoutineId, setDeletingRoutineId] = useState(null);
-    const { store } = useGlobalReducer();
-    const { token, user } = store;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const [routines, setRoutines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("Todos");
+  const [favoriteRoutines, setFavoriteRoutines] = useState([]);
+  const [deletingRoutineId, setDeletingRoutineId] = useState(null);
 
-    useEffect(() => {
-        const fetchRoutines = async () => {
-            try {
-                setLoading(true);
+  const { store } = useGlobalReducer();
+  const { token, user } = store;
 
-                const response = await fetch(`${backendUrl}/api/routines`);
-                const data = await response.json();
+  useEffect(() => {
+    const fetchRoutines = async () => {
+      try {
+        setLoading(true);
 
-                if (!response.ok) {
-                    throw new Error("Error al cargar rutinas");
-                }
+        const response = await fetch(`${backendUrl}/api/routines`);
+        const data = await response.json();
 
-                setRoutines(data);
+        if (!response.ok) throw new Error("Error al cargar rutinas");
 
-                if (token && user?.role === "user") {
-                    const favRes = await fetch(`${backendUrl}/api/favorites_routines`, {
-                        headers: { "Authorization": `Bearer ${token}` }
-                    });
-                    if (favRes.ok) {
-                        const favData = await favRes.json();
-                        setFavoriteRoutines(favData.map(fav => fav.routine_id || fav.routine?.id));
-                    }
-                }
-            } catch (error) {
-                setError(error.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+        setRoutines(data);
 
-        fetchRoutines();
-    }, [backendUrl, token, user?.role]);
+        if (token && user?.role === "user") {
+          const favRes = await fetch(`${backendUrl}/api/favorites_routines`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-    const toggleFavorite = async (routineId) => {
-        if (!token) {
-            alert("Necesitas iniciar sesión para añadir a favoritos.");
-            return;
+          if (favRes.ok) {
+            const favData = await favRes.json();
+            setFavoriteRoutines(favData.map(f => f.routine_id || f.routine?.id));
+          }
         }
-
-        const isFavorite = favoriteRoutines.includes(routineId);
-        const method = isFavorite ? "DELETE" : "POST";
-
-        try {
-            const response = await fetch(`${backendUrl}/api/favorites_routines/${routineId}`, {
-                method: method,
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.msg || "Error al actualizar favoritos.");
-            }
-
-            if (isFavorite) {
-                setFavoriteRoutines(favoriteRoutines.filter(id => id !== routineId));
-            } else {
-                setFavoriteRoutines([...favoriteRoutines, routineId]);
-            }
-
-        } catch (error) {
-            alert(error.message);
-        }
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const handleDeleteRoutine = async (routineId) => {
-        if (!window.confirm("¿Está seguro de eliminar esta rutina? Esta acción no se puede deshacer.")) return;
+    fetchRoutines();
+  }, [backendUrl, token, user?.role]);
 
-        try {
-            setDeletingRoutineId(routineId);
-            const response = await fetch(`${backendUrl}/api/routines/${routineId}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.msg || "Error al eliminar la rutina");
-            setRoutines(routines.filter((item) => item.id !== routineId));
-            alert("Rutina eliminada exitosamente");
-        } catch (error) {
-            alert(error.message);
-        } finally {
-            setDeletingRoutineId(null);
-        }
-    };
-
-    const filteredRoutines =
-        selectedMuscleGroup === "Todos"
-            ? routines
-            : routines.filter((item) => {
-                const muscle = item.muscle_group?.toLowerCase().trim();
-                const englishValue = getEnglishMuscleGroup(selectedMuscleGroup);
-                return muscle === englishValue;
-            });
-
-    if (loading) {
-        return (
-            <div className="container mt-5 text-center">
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Cargando...</span>
-                </div>
-                <p className="mt-3">Cargando rutinas...</p>
-            </div>
-        );
+  const toggleFavorite = async (routineId) => {
+    if (!token) {
+      alert("Necesitas iniciar sesión.");
+      return;
     }
 
+    const isFavorite = favoriteRoutines.includes(routineId);
+    const method = isFavorite ? "DELETE" : "POST";
+
+    try {
+      const response = await fetch(`${backendUrl}/api/favorites_routines/${routineId}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) throw new Error("Error al actualizar favoritos");
+
+      if (isFavorite) {
+        setFavoriteRoutines(favoriteRoutines.filter(id => id !== routineId));
+      } else {
+        setFavoriteRoutines([...favoriteRoutines, routineId]);
+      }
+
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleDeleteRoutine = async (routineId) => {
+    if (!window.confirm("¿Eliminar esta rutina?")) return;
+
+    try {
+      setDeletingRoutineId(routineId);
+
+      const response = await fetch(`${backendUrl}/api/routines/${routineId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error al eliminar");
+
+      setRoutines(routines.filter(r => r.id !== routineId));
+
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setDeletingRoutineId(null);
+    }
+  };
+
+  const filteredRoutines =
+    selectedMuscleGroup === "Todos"
+      ? routines
+      : routines.filter(r => {
+          const muscle = r.muscle_group?.toLowerCase().trim();
+          const english = getEnglishMuscleGroup(selectedMuscleGroup);
+          return muscle === english;
+        });
+
+  if (loading) {
     return (
-        <div className="container mt-5">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Rutinas disponibles</h2>
-                <Link to="/private" className="btn btn-secondary">
-                    Volver al inicio
-                </Link>
-            </div>
-
-            {error && <div className="alert alert-danger">{error}</div>}
-
-            <div className="mb-4">
-                <label className="form-label">Filtrar por grupo muscular</label>
-                <select
-                    className="form-select"
-                    value={selectedMuscleGroup}
-                    onChange={(e) => setSelectedMuscleGroup(e.target.value)}
-                >
-                    <option value="Todos">Todos</option>
-                    <option value="Pecho">Pecho</option>
-                    <option value="Piernas">Piernas</option>
-                    <option value="Espalda">Espalda</option>
-                    <option value="Hombros">Hombros</option>
-                    <option value="Brazos">Brazos</option>
-                    <option value="Abdomen">Abdomen</option>
-                </select>
-            </div>
-
-            <div className="row">
-                {routines.length === 0 && !loading && !error ? (
-                    <div className="col-12">
-                        <div className="text-center py-5">
-                            <i className="fas fa-dumbbell fa-4x text-muted mb-3"></i>
-                            <h4 className="text-muted">No hay rutinas disponibles</h4>
-                            <p className="text-muted">En este momento no hay rutinas programadas. Vuelve más tarde para ver nuevas rutinas.</p>
-                            {token && user?.role === "trainer" && (
-                                <Link to="/create-routine" className="btn btn-primary mt-3">
-                                    <i className="fas fa-plus me-2"></i>
-                                    Crear Nueva Rutina
-                                </Link>
-                            )}
-                        </div>
-                    </div>
-                ) : filteredRoutines.length > 0 ? (
-                    filteredRoutines.map((item) => (
-                        <div className="col-md-4 mb-4" key={item.id}>
-                            <div className="card h-100">
-                                <div className="card-body">
-                                    <div className="d-flex justify-content-between align-items-center mb-2">
-                                        <h5 className="mb-0">{item.name}</h5>
-                                        {token && user?.role === 'user' && (
-                                            <button
-                                                className="btn btn-sm border-0 bg-transparent text-warning"
-                                                onClick={() => toggleFavorite(item.id)}
-                                                title={favoriteRoutines.includes(item.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
-                                                style={{ fontSize: "1.5rem", padding: "0", lineHeight: 1 }}
-                                            >
-                                                {favoriteRoutines.includes(item.id) ? "★" : "☆"}
-                                            </button>
-                                        )}
-                                    </div>
-                                    <p><strong>Objetivo:</strong> {item.goal}</p>
-                                    <p><strong>Nivel:</strong> {item.level}</p>
-                                    <p>
-                                        <strong>Grupo muscular:</strong>{" "}
-                                        {muscleGroupLabels[item.muscle_group] || item.muscle_group || "No especificado"}
-                                    </p>
-                                    <p><strong>Entrenador:</strong> {item.trainer_email}</p>
-                                    <div className="d-flex gap-2 align-items-center">
-                                        <Link
-                                            to={`/routines/${item.id}`}
-                                            className="btn btn-outline-primary"
-                                        >
-                                            Ver detalles
-                                        </Link>
-                                        {user?.role === "trainer" && Number(user?.id) === item.trainer_id && (
-                                            <>
-                                                <Link to={`/routines/${item.id}/edit`} className="btn btn-sm btn-warning">
-                                                    Editar
-                                                </Link>
-                                                <button
-                                                    className="btn btn-sm btn-danger"
-                                                    onClick={() => handleDeleteRoutine(item.id)}
-                                                    disabled={deletingRoutineId === item.id}
-                                                >
-                                                    {deletingRoutineId === item.id ? "Eliminando..." : "Eliminar"}
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <div className="col-12">
-                        <div className="alert alert-warning">
-                            No hay rutinas para ese grupo muscular.
-                        </div>
-                    </div>
-                )}
-            </div>
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-list-loading gp-card">
+            <div className="gp-list-spinner"></div>
+            <p>Cargando rutinas...</p>
+          </div>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="gp-list-page">
+      <div className="gp-list-shell">
+
+        {/* HERO */}
+        <section className="gp-list-hero gp-card">
+          <div>
+            <div className="gp-eyebrow">TRAINING LIBRARY</div>
+            <h1 className="gp-list-title">RUTINAS</h1>
+            <p className="gp-list-subtitle">
+              Explora rutinas por grupo muscular, guarda tus favoritas y accede a detalles completos de cada entrenamiento.
+            </p>
+          </div>
+
+          <div className="gp-list-hero-actions">
+            <Link to="/private" className="gp-btn-secondary">
+              Volver
+            </Link>
+
+            {user?.role === "trainer" && (
+              <Link to="/create-routine" className="gp-btn-primary">
+                Crear rutina
+              </Link>
+            )}
+          </div>
+        </section>
+
+        {/* FILTRO */}
+        <div className="gp-filter-bar gp-card">
+          <span>Filtrar:</span>
+
+          {["Todos","Pecho","Piernas","Espalda","Hombros","Brazos","Abdomen"].map(group => (
+            <button
+              key={group}
+              className={`gp-filter-btn ${selectedMuscleGroup === group ? "active" : ""}`}
+              onClick={() => setSelectedMuscleGroup(group)}
+            >
+              {group}
+            </button>
+          ))}
+        </div>
+
+        {/* GRID */}
+        <section className="gp-classes-grid">
+          {filteredRoutines.map((item) => (
+            <article className="gp-class-card gp-card" key={item.id}>
+
+              <div className="gp-class-content">
+
+                {/* HEADER */}
+                <div className="d-flex justify-content-between align-items-start">
+                  <h3>{item.name}</h3>
+
+                  {user?.role === "user" && (
+                    <button
+                      className="gp-fav-btn"
+                      onClick={() => toggleFavorite(item.id)}
+                    >
+                      {favoriteRoutines.includes(item.id) ? "★" : "☆"}
+                    </button>
+                  )}
+                </div>
+
+                {/* META */}
+                <div className="gp-class-meta">
+                  <span>{muscleGroupLabels[item.muscle_group]}</span>
+                  <span>{item.level}</span>
+                </div>
+
+                {/* INFO */}
+                <div className="gp-class-info">
+                  <div className="gp-class-info-item">
+                    <span>Objetivo</span>
+                    <strong>{item.goal}</strong>
+                  </div>
+
+                  <div className="gp-class-info-item">
+                    <span>Entrenador</span>
+                    <strong>{item.trainer_email}</strong>
+                  </div>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="gp-class-actions">
+                  <Link to={`/routines/${item.id}`} className="gp-btn-primary">
+                    Ver rutina
+                  </Link>
+
+                  {user?.role === "trainer" && Number(user?.id) === item.trainer_id && (
+                    <>
+                      <Link to={`/routines/${item.id}/edit`} className="gp-btn-secondary">
+                        Editar
+                      </Link>
+
+                      <button
+                        className="gp-class-delete"
+                        onClick={() => handleDeleteRoutine(item.id)}
+                        disabled={deletingRoutineId === item.id}
+                      >
+                        {deletingRoutineId === item.id ? "..." : "Eliminar"}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+              </div>
+            </article>
+          ))}
+        </section>
+
+      </div>
+    </div>
+  );
 };

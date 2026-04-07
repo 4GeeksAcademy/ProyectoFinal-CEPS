@@ -8,7 +8,6 @@ export const CreateRoutine = () => {
   const { store } = useGlobalReducer();
   const { user, token } = store;
 
-  // Estado para el formulario de la rutina
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -18,7 +17,6 @@ export const CreateRoutine = () => {
     muscle_group: ""
   });
 
-  // Estados para el manejo de ejercicios
   const [allExercises, setAllExercises] = useState([]);
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [showExerciseSelection, setShowExerciseSelection] = useState(false);
@@ -27,7 +25,6 @@ export const CreateRoutine = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Obtener los ejercicios desde el backend
   useEffect(() => {
     const fetchExercises = async () => {
       try {
@@ -40,13 +37,18 @@ export const CreateRoutine = () => {
         console.error("Error cargando ejercicios", err);
       }
     };
+
     fetchExercises();
   }, [backendUrl]);
 
   if (!user || user.role !== "trainer") {
     return (
-      <div className="container mt-5 alert alert-danger">
-        Solo los entrenadores pueden acceder a esta página.
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-auth-error">
+            Solo los entrenadores pueden acceder a esta página.
+          </div>
+        </div>
       </div>
     );
   }
@@ -55,13 +57,10 @@ export const CreateRoutine = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Funciones para manejar la selección de ejercicios
   const handleAddExercise = (exercise) => {
-    // Evitar duplicados
     if (!selectedExercises.find((ex) => ex.id === exercise.id)) {
       setSelectedExercises([...selectedExercises, exercise]);
     }
-    // Retorna a la vista de creación de rutina tras seleccionar
     setShowExerciseSelection(false);
   };
 
@@ -78,16 +77,18 @@ export const CreateRoutine = () => {
     core: "abdomen"
   };
 
-  const filteredExercises = selectedMuscleGroup === "all"
-    ? allExercises
-    : allExercises.filter((ex) => ex.zone?.toLowerCase().includes(muscleGroupLabels[selectedMuscleGroup]));
+  const filteredExercises =
+    selectedMuscleGroup === "all"
+      ? allExercises
+      : allExercises.filter((ex) =>
+          ex.zone?.toLowerCase().includes(muscleGroupLabels[selectedMuscleGroup])
+        );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Preparamos el payload (mandamos los IDs de los ejercicios seleccionados)
     const payload = {
       ...form,
       exercises: selectedExercises.map((ex) => ex.id)
@@ -98,7 +99,7 @@ export const CreateRoutine = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
@@ -107,7 +108,7 @@ export const CreateRoutine = () => {
       if (!response.ok) throw new Error(data.msg || "Error al crear la rutina");
 
       alert("Rutina creada exitosamente");
-      navigate("/private"); // O a donde prefieras redirigir
+      navigate("/private");
     } catch (error) {
       setError(error.message);
     } finally {
@@ -115,148 +116,268 @@ export const CreateRoutine = () => {
     }
   };
 
-  // ==========================================
-  // VISTA 2: SELECCIÓN DE EJERCICIOS
-  // ==========================================
   if (showExerciseSelection) {
     return (
-      <div className="container mt-5">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2>Seleccionar Ejercicio</h2>
-          <button className="btn btn-secondary" onClick={() => setShowExerciseSelection(false)}>
-            Volver a la Rutina
-          </button>
-        </div>
-
-        <select className="form-select mb-4" value={selectedMuscleGroup} onChange={(e) => setSelectedMuscleGroup(e.target.value)}>
-          <option value="all">Todos</option>
-          <option value="chest">Pecho</option>
-          <option value="legs">Piernas</option>
-          <option value="back">Espalda</option>
-          <option value="shoulders">Hombros</option>
-          <option value="arms">Brazos</option>
-          <option value="core">Abdomen</option>
-        </select>
-
-        <div className="row">
-          {filteredExercises.map((ex) => (
-            <div className="col-md-4 mb-3" key={ex.id}>
-              <div className="card h-100">
-                {ex.image_url && (
-                  <img
-                    src={ex.image_url}
-                    alt={ex.name}
-                    className="card-img-top"
-                    style={{ height: "200px", objectFit: "contain" }}
-                  />
-                )}
-                <div className="card-body">
-                  <h5 className="card-title">{ex.name}</h5>
-                  <p className="card-text text-muted">Zona: {ex.zone}</p>
-                  <button className="btn btn-outline-success w-100" onClick={() => handleAddExercise(ex)}>
-                    Seleccionar
-                  </button>
-                </div>
-              </div>
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <section className="gp-list-hero gp-card">
+            <div>
+              <div className="gp-eyebrow">EXERCISE PICKER</div>
+              <h1 className="gp-list-title">SELECCIONAR EJERCICIO</h1>
+              <p className="gp-list-subtitle">
+                Explora el banco de ejercicios y añade los que harán parte de tu rutina.
+              </p>
             </div>
-          ))}
-          {filteredExercises.length === 0 && <p className="text-muted">No se encontraron ejercicios para esa zona.</p>}
+
+            <div className="gp-list-hero-actions">
+              <button
+                type="button"
+                className="gp-btn-secondary"
+                onClick={() => setShowExerciseSelection(false)}
+              >
+                Volver a la rutina
+              </button>
+            </div>
+          </section>
+
+          <div className="gp-filter-bar gp-card">
+            <span>Filtrar:</span>
+
+            {[
+              { value: "all", label: "Todos" },
+              { value: "chest", label: "Pecho" },
+              { value: "legs", label: "Piernas" },
+              { value: "back", label: "Espalda" },
+              { value: "shoulders", label: "Hombros" },
+              { value: "arms", label: "Brazos" },
+              { value: "core", label: "Abdomen" }
+            ].map((group) => (
+              <button
+                key={group.value}
+                type="button"
+                className={`gp-filter-btn ${selectedMuscleGroup === group.value ? "active" : ""}`}
+                onClick={() => setSelectedMuscleGroup(group.value)}
+              >
+                {group.label}
+              </button>
+            ))}
+          </div>
+
+          {filteredExercises.length === 0 ? (
+            <div className="gp-empty-state gp-card">
+              <div className="gp-empty-icon">
+                <i className="fas fa-dumbbell"></i>
+              </div>
+              <h3>No se encontraron ejercicios</h3>
+              <p>No hay ejercicios disponibles para ese grupo muscular.</p>
+            </div>
+          ) : (
+            <section className="gp-classes-grid">
+              {filteredExercises.map((ex) => (
+                <article className="gp-class-card gp-card" key={ex.id}>
+                  <div className="gp-class-media">
+                    <img
+                      src={
+                        ex.image_url ||
+                        "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80"
+                      }
+                      alt={ex.name}
+                    />
+                  </div>
+
+                  <div className="gp-class-content">
+                    <div className="gp-class-meta">
+                      <span>{ex.zone || "General"}</span>
+                    </div>
+
+                    <h3>{ex.name}</h3>
+
+                    <div className="gp-class-info">
+                      <div className="gp-class-info-item">
+                        <span>Zona</span>
+                        <strong>{ex.zone || "No especificada"}</strong>
+                      </div>
+                    </div>
+
+                    <div className="gp-class-actions">
+                      <button
+                        type="button"
+                        className="gp-btn-primary"
+                        onClick={() => handleAddExercise(ex)}
+                      >
+                        Seleccionar
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </section>
+          )}
         </div>
       </div>
     );
   }
 
-  // ==========================================
-  // VISTA 1: FORMULARIO DE LA RUTINA
-  // ==========================================
   return (
-    <div className="container mt-5">
-      <h2>Crear Nueva Rutina</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
+    <div className="gp-list-page">
+      <div className="gp-list-shell">
+        <section className="gp-list-hero gp-card">
+          <div>
+            <div className="gp-eyebrow">CREATE ROUTINE</div>
+            <h1 className="gp-list-title">CREAR RUTINA</h1>
+            <p className="gp-list-subtitle">
+              Diseña una rutina completa, selecciona ejercicios y define objetivos
+              para tus usuarios.
+            </p>
+          </div>
 
-      <form onSubmit={handleSubmit} className="mt-4">
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Nombre</label>
+          <div className="gp-list-hero-actions">
+            <button
+              type="button"
+              className="gp-btn-secondary"
+              onClick={() => navigate("/private")}
+            >
+              Cancelar
+            </button>
           </div>
-          <div className="col-md-10">
-            <input className="form-control" name="name" value={form.name} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Descripción</label>
-          </div>
-          <div className="col-md-10">
-            <textarea className="form-control" name="description" value={form.description} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Objetivo</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" name="goal" value={form.goal} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Nivel</label>
-          </div>
-          <div className="col-md-10">
-            <select className="form-select" name="level" value={form.level} onChange={handleChange} required>
-              <option value="" disabled>Selecciona el nivel</option>
-              <option value="Principiante">Principiante</option>
-              <option value="Intermedio">Intermedio</option>
-              <option value="Avanzado">Avanzado</option>
-            </select>
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Tiempo Estimado (minutos)</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" type="number" name="estimated_time" value={form.estimated_time} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Grupo Muscular</label>
-          </div>
-          <div className="col-md-10">
-            <select className="form-select" name="muscle_group" value={form.muscle_group} onChange={handleChange} required>
-              <option value="" disabled>Selecciona el grupo muscular</option>
-              <option value="chest">Pecho</option>
-              <option value="legs">Piernas</option>
-              <option value="back">Espalda</option>
-              <option value="shoulders">Hombros</option>
-              <option value="arms">Brazos</option>
-              <option value="core">Abdomen</option>
-            </select>
-          </div>
-        </div>
+        </section>
 
-        <div className="card mb-4">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Ejercicios Seleccionados ({selectedExercises.length})</h5>
-            <button type="button" className="btn btn-sm btn-primary" onClick={() => setShowExerciseSelection(true)}>+ Añadir Ejercicio</button>
-          </div>
-          <ul className="list-group list-group-flush">
-            {selectedExercises.map((ex) => (<li key={ex.id} className="list-group-item d-flex justify-content-between align-items-center"><span><strong>{ex.name}</strong> - {ex.zone}</span><button type="button" className="btn btn-sm btn-danger" onClick={() => handleRemoveExercise(ex.id)}>Quitar</button></li>))}
-            {selectedExercises.length === 0 && <li className="list-group-item text-muted text-center py-3">Aún no has seleccionado ningún ejercicio</li>}
-          </ul>
-        </div>
+        {error && <div className="gp-auth-error">{error}</div>}
 
-        <div className="d-flex gap-2">
-          <button type="submit" className="btn btn-success flex-fill py-2" disabled={loading}>
-            {loading ? "Creando..." : "Crear Rutina"}
-          </button>
-          <button type="button" className="btn btn-secondary flex-fill py-2" onClick={() => navigate("/private")}>
-            Cancelar
-          </button>
-        </div>
-      </form>
+        <form onSubmit={handleSubmit} className="gp-form gp-card" noValidate>
+          <div className="gp-form-section">
+            <h3>Información básica</h3>
+
+            <div className="gp-form-grid">
+              <div className="gp-form-field">
+                <label>Nombre</label>
+                <input
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Nombre de la rutina"
+                  required
+                />
+              </div>
+
+              <div className="gp-form-field">
+                <label>Objetivo</label>
+                <input
+                  name="goal"
+                  value={form.goal}
+                  onChange={handleChange}
+                  placeholder="Ej: Hipertrofia, resistencia..."
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="gp-form-field">
+              <label>Descripción</label>
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Describe la rutina"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="gp-form-section">
+            <h3>Configuración</h3>
+
+            <div className="gp-form-grid">
+              <div className="gp-form-field">
+                <label>Nivel</label>
+                <select
+                  name="level"
+                  value={form.level}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Selecciona</option>
+                  <option value="Principiante">Principiante</option>
+                  <option value="Intermedio">Intermedio</option>
+                  <option value="Avanzado">Avanzado</option>
+                </select>
+              </div>
+
+              <div className="gp-form-field">
+                <label>Grupo muscular</label>
+                <select
+                  name="muscle_group"
+                  value={form.muscle_group}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Selecciona</option>
+                  <option value="chest">Pecho</option>
+                  <option value="legs">Piernas</option>
+                  <option value="back">Espalda</option>
+                  <option value="shoulders">Hombros</option>
+                  <option value="arms">Brazos</option>
+                  <option value="core">Abdomen</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="gp-form-field">
+              <label>Tiempo estimado (min)</label>
+              <input
+                type="number"
+                name="estimated_time"
+                value={form.estimated_time}
+                onChange={handleChange}
+                placeholder="Ej: 45"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="gp-form-section">
+            <h3>Ejercicios seleccionados ({selectedExercises.length})</h3>
+
+            <button
+              type="button"
+              className="gp-btn-secondary"
+              onClick={() => setShowExerciseSelection(true)}
+            >
+              + Añadir ejercicio
+            </button>
+
+            <div className="gp-selected-exercises">
+              {selectedExercises.length === 0 ? (
+                <div className="gp-auth-error">
+                  Aún no has seleccionado ejercicios
+                </div>
+              ) : (
+                selectedExercises.map((ex) => (
+                  <div className="gp-selected-exercise" key={ex.id}>
+                    <span>
+                      <strong>{ex.name}</strong> - {ex.zone}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="gp-btn-secondary"
+                      onClick={() => handleRemoveExercise(ex.id)}
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="gp-form-actions">
+            <button type="submit" className="gp-btn-primary" disabled={loading}>
+              {loading ? "Creando..." : "Crear rutina"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

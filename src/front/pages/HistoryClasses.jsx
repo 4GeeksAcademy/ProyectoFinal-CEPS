@@ -10,14 +10,16 @@ export const HistoryClasses = () => {
     useEffect(() => {
         const cargarHistorial = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token =
+                    localStorage.getItem("token") || sessionStorage.getItem("token");
+
                 if (!token) {
                     window.location.href = "/login";
                     return;
                 }
 
                 const res = await fetch(`${backendUrl}/api/attended_classes`, {
-                    headers: { "Authorization": `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
 
                 const data = await res.json();
@@ -35,100 +37,106 @@ export const HistoryClasses = () => {
 
     if (cargando) {
         return (
-            <div className="container mt-5 text-center">
-                <div className="spinner-border text-primary"></div>
-                <p className="mt-2">Cargando historial de clases...</p>
+            <div className="gp-list-page">
+                <div className="gp-list-shell">
+                    <div className="gp-empty-state gp-card">
+                        <div className="gp-list-spinner"></div>
+                        <p>Cargando historial de clases...</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="container mt-5">
-                <div className="alert alert-danger">{error}</div>
-                <Link to="/perfil" className="btn btn-primary">Volver al perfil</Link>
+            <div className="gp-list-page">
+                <div className="gp-list-shell">
+                    <div className="gp-auth-error">{error}</div>
+                    <Link to="/perfil" className="gp-btn-secondary">Volver al perfil</Link>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="container-fluid py-5">
-            <div className="row justify-content-center">
-                <div className="col-12 col-lg-10">
-                    <div className="bg-white rounded-4 p-4 p-lg-5 shadow-sm">
-                        <div className="d-flex align-items-center mb-4">
-                            <Link to="/perfil" className="btn btn-outline-secondary me-3">
-                                <i className="fas fa-arrow-left"></i>
-                            </Link>
-                            <h2 className="mb-0">Historial de Clases Asistidas</h2>
-                        </div>
+        <div className="gp-list-page">
+            <div className="gp-list-shell">
+                <section className="gp-list-hero gp-card">
+                    <div>
+                        <div className="gp-eyebrow">CLASS HISTORY</div>
+                        <h1 className="gp-list-title">HISTORIAL DE CLASES</h1>
+                        <p className="gp-list-subtitle">
+                            Revisa las clases a las que ya asististe y mantén visible tu recorrido de entrenamiento.
+                        </p>
+                    </div>
 
-                        {attendedClasses.length === 0 ? (
-                            <div className="text-center py-5">
-                                <i className="fas fa-calendar-times fa-4x text-muted mb-3"></i>
-                                <h4 className="text-muted">No hay historial de clases asistidas</h4>
-                                <p className="text-muted">Aún no has asistido a ninguna clase.</p>
-                                <Link to="/classes" className="btn btn-primary mt-3">
-                                    <i className="fas fa-search me-2"></i>
-                                    Explorar Clases Disponibles
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="row g-4">
-                                {attendedClasses.map((assigned) => (
-                                    <div key={assigned.id} className="col-md-6 col-lg-4">
-                                        <div className="card h-100 border-0 shadow-sm">
-                                            {assigned.class?.image_url && (
-                                                <img
-                                                    src={assigned.class.image_url}
-                                                    className="card-img-top"
-                                                    alt={assigned.class.title}
-                                                    style={{ height: "200px", objectFit: "cover" }}
-                                                />
-                                            )}
-                                            <div className="card-body">
-                                                <h5 className="card-title">{assigned.class?.title}</h5>
-                                                <p className="card-text text-muted small">
-                                                    {assigned.class?.description}
-                                                </p>
-                                                <div className="mb-2">
-                                                    <small className="text-muted">
-                                                        <i className="fas fa-calendar me-1"></i>
-                                                        {assigned.class?.date} - {assigned.class?.time}
-                                                    </small>
-                                                </div>
-                                                <div className="mb-2">
-                                                    <small className="text-muted">
-                                                        <i className="fas fa-clock me-1"></i>
-                                                        {assigned.class?.duration} minutos
-                                                    </small>
-                                                </div>
-                                                <div className="mb-2">
-                                                    <small className="text-muted">
-                                                        <i className="fas fa-user me-1"></i>
-                                                        Entrenador: {assigned.trainer_name || "N/A"}
-                                                    </small>
-                                                </div>
-                                                {assigned.attended_date && (
-                                                    <div className="mb-2">
-                                                        <small className="text-success">
-                                                            <i className="fas fa-check-circle me-1"></i>
-                                                            Asistida el {assigned.attended_date}
-                                                        </small>
-                                                    </div>
-                                                )}
-                                                <span className={`badge ${assigned.class?.level === 'principiante' ? 'bg-success' :
-                                                    assigned.class?.level === 'intermedio' ? 'bg-warning' : 'bg-danger'}`}>
-                                                    {assigned.class?.level}
-                                                </span>
-                                            </div>
+                    <div className="gp-list-hero-actions">
+                        <Link to="/perfil" className="gp-btn-secondary">
+                            Volver al perfil
+                        </Link>
+                    </div>
+                </section>
+
+                {attendedClasses.length === 0 ? (
+                    <div className="gp-empty-state gp-card">
+                        <div className="gp-empty-icon">
+                            <i className="fas fa-calendar-times"></i>
+                        </div>
+                        <h3>No hay historial de clases asistidas</h3>
+                        <p>Aún no has asistido a ninguna clase.</p>
+                        <Link to="/classes" className="gp-btn-primary">
+                            Explorar clases disponibles
+                        </Link>
+                    </div>
+                ) : (
+                    <section className="gp-classes-grid">
+                        {attendedClasses.map((assigned) => (
+                            <article className="gp-class-card gp-card" key={assigned.id}>
+                                {assigned.class?.image_url ? (
+                                    <div className="gp-class-media">
+                                        <img
+                                            src={assigned.class.image_url}
+                                            alt={assigned.class.title}
+                                        />
+                                    </div>
+                                ) : null}
+
+                                <div className="gp-class-content">
+                                    <div className="gp-class-meta">
+                                        <span>{assigned.class?.level || "General"}</span>
+                                        <span>Asistida</span>
+                                    </div>
+
+                                    <h3>{assigned.class?.title}</h3>
+                                    <p>{assigned.class?.description}</p>
+
+                                    <div className="gp-class-info">
+                                        <div className="gp-class-info-item">
+                                            <span>Fecha</span>
+                                            <strong>{assigned.class?.date} - {assigned.class?.time}</strong>
+                                        </div>
+
+                                        <div className="gp-class-info-item">
+                                            <span>Duración</span>
+                                            <strong>{assigned.class?.duration} min</strong>
+                                        </div>
+
+                                        <div className="gp-class-info-item">
+                                            <span>Entrenador</span>
+                                            <strong>{assigned.trainer_name || "N/A"}</strong>
+                                        </div>
+
+                                        <div className="gp-class-info-item">
+                                            <span>Asistencia</span>
+                                            <strong>{assigned.attended_date || "Registrada"}</strong>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                                </div>
+                            </article>
+                        ))}
+                    </section>
+                )}
             </div>
         </div>
     );

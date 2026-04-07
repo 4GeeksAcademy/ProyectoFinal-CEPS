@@ -8,6 +8,7 @@ export const Login = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [keepLoggedIn, setKeepLoggedIn] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -38,12 +39,16 @@ export const Login = () => {
                 throw new Error(data.msg || "Error al iniciar sesión");
             }
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
+            if (keepLoggedIn) {
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("user", JSON.stringify(data.user));
+            } else {
+                sessionStorage.setItem("token", data.token);
+                sessionStorage.setItem("user", JSON.stringify(data.user));
+            }
 
-            // Dispatch login action to update global state
             dispatch({
-                type: 'login',
+                type: "login",
                 payload: {
                     token: data.token,
                     user: data.user
@@ -51,7 +56,6 @@ export const Login = () => {
             });
 
             navigate("/private");
-
         } catch (error) {
             setError(error.message);
         } finally {
@@ -60,48 +64,101 @@ export const Login = () => {
     };
 
     return (
-        <div className="container mt-5">
-            <div className="row justify-content-center">
-                <div className="col-md-6">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="text-center">Login</h3>
+        <div className="gp-auth-page">
+            <div className="gp-auth-shell">
+                <div
+                    className="gp-auth-visual"
+                    style={{
+                        backgroundImage:
+                            "url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1400&q=80')"
+                    }}
+                >
+                    <div className="gp-auth-visual-overlay"></div>
+
+                    <div className="gp-auth-visual-content">
+                        <div className="gp-auth-kicker">
+                            <span className="gp-auth-kicker-line"></span>
+                            ELITE PERFORMANCE
                         </div>
-                        <div className="card-body">
-                            {error && <div className="alert alert-danger">{error}</div>}
 
-                            <form onSubmit={handleSubmit}>
-                                <div className="mb-3">
-                                    <label className="form-label">Correo</label>
-                                    <input
-                                        type="email"
-                                        className="form-control"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                    />
-                                </div>
+                        <h1 className="gp-auth-hero">
+                            TRAIN
+                            <br />
+                            WITHOUT
+                            <br />
+                            <em>LIMITS</em>
+                        </h1>
 
-                                <div className="mb-3">
-                                    <label className="form-label">Contraseña</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                    />
-                                </div>
+                        <p className="gp-auth-hero-copy">
+                            Accede a tu panel, administra tus entrenamientos y lleva tu progreso al siguiente nivel.
+                        </p>
+                    </div>
+                </div>
 
-                                <button type="submit" className="btn btn-success w-100" disabled={loading}>
-                                    {loading ? "Ingresando..." : "Iniciar sesión"}
-                                </button>
-                            </form>
+                <div className="gp-auth-panel">
+                    <div className="gp-auth-panel-inner">
+                        <div className="gp-auth-brand">GYMPLANNER</div>
 
-                            <div className="mt-3 text-center">
-                                <Link to="/signup">¿No tienes cuenta? Regístrate</Link>
+                        <h2 className="gp-auth-title">Welcome Back</h2>
+                        <p className="gp-auth-subtitle">
+                            Ingresa tus credenciales para continuar.
+                        </p>
+
+                        {error && <div className="gp-auth-error">{error}</div>}
+
+                        <form onSubmit={handleSubmit} className="gp-auth-form">
+                            <div className="gp-auth-field">
+                                <label>Correo</label>
+                                <input
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
                             </div>
-                        </div>
+
+                            <div className="gp-auth-field">
+                                <label>Contraseña</label>
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="gp-auth-row">
+                                <label className="gp-auth-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        checked={keepLoggedIn}
+                                        onChange={(e) => setKeepLoggedIn(e.target.checked)}
+                                    />
+                                    <span>Mantener sesión iniciada</span>
+                                </label>
+
+                                <button
+                                    type="button"
+                                    className="gp-auth-link-button"
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </button>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="gp-auth-submit"
+                                disabled={loading}
+                            >
+                                {loading ? "INGRESANDO..." : "INICIAR SESIÓN"}
+                            </button>
+                        </form>
+
+                        <p className="gp-auth-switch">
+                            ¿No tienes cuenta? <Link to="/signup">Regístrate</Link>
+                        </p>
                     </div>
                 </div>
             </div>

@@ -1,135 +1,180 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 export const Navbar = () => {
 	const navigate = useNavigate();
+	const location = useLocation();
+	const dropdownRef = useRef(null);
+
 	const [user, setUser] = useState(null);
-	const [isOpen, setIsOpen] = useState(false);
+	const [mobileOpen, setMobileOpen] = useState(false);
+	const [profileOpen, setProfileOpen] = useState(false);
 
 	useEffect(() => {
-		const userData = localStorage.getItem("user");
+		const localUser = localStorage.getItem("user");
+		const sessionUser = sessionStorage.getItem("user");
+		const userData = localUser || sessionUser;
+
 		if (userData) {
-			setUser(JSON.parse(userData));
+			try {
+				setUser(JSON.parse(userData));
+			} catch {
+				setUser(null);
+			}
 		}
 	}, []);
+
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setProfileOpen(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
+
+	useEffect(() => {
+		setMobileOpen(false);
+		setProfileOpen(false);
+	}, [location.pathname]);
 
 	const handleLogout = () => {
 		localStorage.removeItem("token");
 		localStorage.removeItem("user");
+		sessionStorage.removeItem("token");
+		sessionStorage.removeItem("user");
 		navigate("/login");
 	};
 
+	const isActive = (path) => location.pathname === path;
+
 	return (
-		<nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-			<div className="container">
-				<Link className="navbar-brand fw-bold" to="/private">
-					<i className="fas fa-dumbbell me-2"></i>
-					GymPlanner
-				</Link>
+		<header className="gp-navbar-wrap">
+			<nav className="gp-navbar">
+				<div className="gp-navbar-inner">
+					<div className="gp-navbar-left">
+						<Link className="gp-navbar-brand" to={user ? "/private" : "/login"}>
+							<span className="gp-navbar-brand-icon">
+								<i className="fas fa-dumbbell"></i>
+							</span>
+							<span>GymPlanner</span>
+						</Link>
+					</div>
 
-				<button
-					className="navbar-toggler"
-					type="button"
-					onClick={() => setIsOpen(!isOpen)}
-				>
-					<span className="navbar-toggler-icon"></span>
-				</button>
+					<button
+						className="gp-navbar-toggle"
+						type="button"
+						onClick={() => setMobileOpen(!mobileOpen)}
+						aria-label="Abrir menú"
+					>
+						<i className="fas fa-bars"></i>
+					</button>
 
-				<div className={`collapse navbar-collapse ${isOpen ? "show" : ""}`}>
-					<ul className="navbar-nav me-auto mb-2 mb-lg-0">
-						<li className="nav-item">
-							<Link className="nav-link" to="/private">
-								<i className="fas fa-home me-1"></i>
-								Inicio
-							</Link>
-						</li>
+					<div className={`gp-navbar-center ${mobileOpen ? "is-open" : ""}`}>
+						<Link
+							className={`gp-navbar-link ${isActive("/private") ? "is-active" : ""}`}
+							to="/private"
+						>
+							Inicio
+						</Link>
+
 						{user && (
 							<>
-								<li className="nav-item">
-									<Link className="nav-link" to="/classes">
-										<i className="fas fa-calendar-alt me-1"></i>
-										Clases
-									</Link>
-								</li>
-								<li className="nav-item">
-									<Link className="nav-link" to="/routines">
-										<i className="fas fa-dumbbell me-1"></i>
-										Rutinas
-									</Link>
-								</li>
+								<Link
+									className={`gp-navbar-link ${isActive("/classes") ? "is-active" : ""}`}
+									to="/classes"
+								>
+									Clases
+								</Link>
+
+								<Link
+									className={`gp-navbar-link ${isActive("/routines") ? "is-active" : ""}`}
+									to="/routines"
+								>
+									Rutinas
+								</Link>
+
 								{user.role === "trainer" && (
 									<>
-										<li className="nav-item">
-											<Link className="nav-link" to="/create-class">
-												<i className="fas fa-plus-circle me-1"></i>
-												Crear Clase
-											</Link>
-										</li>
-										<li className="nav-item">
-											<Link className="nav-link" to="/create-routine">
-												<i className="fas fa-plus-circle me-1"></i>
-												Crear Rutina
-											</Link>
-										</li>
+										<Link
+											className={`gp-navbar-link ${isActive("/create-class") ? "is-active" : ""}`}
+											to="/create-class"
+										>
+											Crear Clase
+										</Link>
+
+										<Link
+											className={`gp-navbar-link ${isActive("/create-routine") ? "is-active" : ""}`}
+											to="/create-routine"
+										>
+											Crear Rutina
+										</Link>
 									</>
 								)}
 							</>
 						)}
-					</ul>
+					</div>
 
-					{user ? (
-						<ul className="navbar-nav ms-auto mb-2 mb-lg-0">
-							<li className="nav-item dropdown">
+					<div className={`gp-navbar-right ${mobileOpen ? "is-open" : ""}`}>
+						{user ? (
+							<div className="gp-navbar-profile" ref={dropdownRef}>
 								<button
-									className="nav-link dropdown-toggle btn btn-link text-white"
-									onClick={() => setIsOpen(!isOpen)}
-									data-bs-toggle="dropdown"
-									style={{ cursor: "pointer" }}
+									className="gp-navbar-profile-trigger"
+									onClick={() => setProfileOpen(!profileOpen)}
+									type="button"
 								>
-									<i className="fas fa-user-circle me-1"></i>
-									{user.name || user.email}
+									<span className="gp-navbar-profile-avatar">
+										{(user.email || "U").charAt(0).toUpperCase()}
+									</span>
+
+									<div className="gp-navbar-profile-copy">
+										<span className="gp-navbar-profile-label">
+											{user.role === "trainer" ? "Entrenador" : "Usuario"}
+										</span>
+										<strong>{user.name || user.email}</strong>
+									</div>
+
+									<i className="fas fa-chevron-down"></i>
 								</button>
-								<ul className="dropdown-menu dropdown-menu-end">
-									<li>
-										<Link className="dropdown-item" to="/editar-perfil">
-											<i className="fas fa-user-edit me-2"></i>
-											Editar Perfil
+
+								{profileOpen && (
+									<div className="gp-navbar-dropdown">
+										<Link className="gp-navbar-dropdown-item" to="/editar-perfil">
+											<i className="fas fa-user-edit"></i>
+											<span>Editar perfil</span>
 										</Link>
-									</li>
-									<li>
-										<Link className="dropdown-item" to="/perfil">
-											<i className="fas fa-id-card me-2"></i>
-											Ver Perfil
+
+										<Link className="gp-navbar-dropdown-item" to="/perfil">
+											<i className="fas fa-id-card"></i>
+											<span>Ver perfil</span>
 										</Link>
-									</li>
-									<li><hr className="dropdown-divider" /></li>
-									<li>
-										<button className="dropdown-item text-danger" onClick={handleLogout}>
-											<i className="fas fa-sign-out-alt me-2"></i>
-											Cerrar Sesión
+
+										<button
+											className="gp-navbar-dropdown-item is-danger"
+											onClick={handleLogout}
+											type="button"
+										>
+											<i className="fas fa-sign-out-alt"></i>
+											<span>Cerrar sesión</span>
 										</button>
-									</li>
-								</ul>
-							</li>
-						</ul>
-					) : (
-						<ul className="navbar-nav ms-auto mb-2 mb-lg-0">
-							<li className="nav-item">
-								<Link className="nav-link" to="/login">
-									<i className="fas fa-sign-in-alt me-1"></i>
-									Iniciar Sesión
+									</div>
+								)}
+							</div>
+						) : (
+							<div className="gp-navbar-auth">
+								<Link className="gp-navbar-link" to="/login">
+									Iniciar sesión
 								</Link>
-							</li>
-							<li className="nav-item">
-								<Link className="nav-link btn btn-outline-light rounded-pill px-3" to="/signup">
-									<i className="fas fa-user-plus me-1"></i>
+								<Link className="gp-btn-secondary gp-navbar-signup" to="/signup">
 									Registrarse
 								</Link>
-							</li>
-						</ul>
-					)}
+							</div>
+						)}
+					</div>
 				</div>
-			</div>
-		</nav>
+			</nav>
+		</header>
 	);
 };

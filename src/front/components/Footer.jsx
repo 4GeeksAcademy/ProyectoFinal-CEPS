@@ -1,5 +1,22 @@
-export const Footer = () => (
-	<footer className="footer mt-auto py-3 text-center">
-		<h5>© 2026 GymPlanner. Todos los derechos reservados.</h5>
-	</footer>
-);
+import React from "react";
+import { Link } from "react-router-dom";
+
+export const Footer = () => {
+	return (
+		<footer className="gp-footer-minimal">
+			<div className="gp-footer-minimal-shell">
+				<div className="gp-footer-minimal-brand">GymPlanner</div>
+
+				<div className="gp-footer-minimal-links">
+					<Link to="/classes">Clases</Link>
+					<Link to="/routines">Rutinas</Link>
+					<Link to="/private">Dashboard</Link>
+				</div>
+
+				<div className="gp-footer-minimal-copy">
+					© 2026 GymPlanner. Todos los derechos reservados.
+				</div>
+			</div>
+		</footer>
+	);
+};

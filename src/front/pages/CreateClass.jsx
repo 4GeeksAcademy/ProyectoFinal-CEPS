@@ -27,9 +27,11 @@ export const CreateClass = () => {
 
   if (!user || user.role !== "trainer") {
     return (
-      <div className="container mt-5">
-        <div className="alert alert-danger">
-          Solo los entrenadores pueden acceder a esta página.
+      <div className="gp-list-page">
+        <div className="gp-list-shell">
+          <div className="gp-auth-error">
+            Solo los entrenadores pueden acceder a esta página.
+          </div>
         </div>
       </div>
     );
@@ -52,7 +54,7 @@ export const CreateClass = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(form)
       });
@@ -60,12 +62,12 @@ export const CreateClass = () => {
       let data = {};
       try {
         data = await response.json();
-      } catch (err) {
+      } catch {
         data = {};
       }
 
       if (!response.ok) {
-        throw new Error(data.msg || "Error en el servidor. Por favor revisa la terminal del backend.");
+        throw new Error(data.msg || "Error al crear la clase");
       }
 
       alert("Clase creada exitosamente");
@@ -78,112 +80,195 @@ export const CreateClass = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <h2>Crear Clase</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
+    <div className="gp-list-page">
+      <div className="gp-list-shell">
+        <section className="gp-list-hero gp-card">
+          <div>
+            <div className="gp-eyebrow">CREATE SESSION</div>
+            <h1 className="gp-list-title">CREAR CLASE</h1>
+            <p className="gp-list-subtitle">
+              Configura una nueva sesión de entrenamiento, define cupos, nivel,
+              ubicación y publica tu clase para los usuarios.
+            </p>
+          </div>
 
-      <form onSubmit={handleSubmit} className="mt-4">
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Título</label>
+          <div className="gp-list-hero-actions">
+            <button
+              type="button"
+              className="gp-btn-secondary"
+              onClick={() => navigate("/private")}
+            >
+              Cancelar
+            </button>
           </div>
-          <div className="col-md-10">
-            <input className="form-control" name="title" value={form.title} onChange={handleChange} required />
+        </section>
+
+        {error && <div className="gp-auth-error">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="gp-form gp-card" noValidate>
+          <div className="gp-form-section">
+            <h3>Información básica</h3>
+
+            <div className="gp-form-grid">
+              <div className="gp-form-field">
+                <label htmlFor="title">Título</label>
+                <input
+                  id="title"
+                  name="title"
+                  placeholder="Título de la clase"
+                  value={form.title}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="gp-form-field">
+                <label htmlFor="category">Categoría</label>
+                <select
+                  id="category"
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Selecciona una categoría</option>
+                  <option value="Clases de fuerza">Clases de fuerza</option>
+                  <option value="Clases de mente, cuerpo y flexibilidad">
+                    Clases de mente, cuerpo y flexibilidad
+                  </option>
+                  <option value="Clases de intervalos de alta intensidad">
+                    Clases de intervalos de alta intensidad
+                  </option>
+                  <option value="Clases de ciclismo en interior">
+                    Clases de ciclismo en interior
+                  </option>
+                  <option value="Clases especializadas">Clases especializadas</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="gp-form-field">
+              <label htmlFor="description">Descripción</label>
+              <textarea
+                id="description"
+                name="description"
+                placeholder="Describe la clase, objetivos y lo que incluye"
+                value={form.description}
+                onChange={handleChange}
+                required
+              />
+            </div>
           </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Descripción</label>
+
+          <div className="gp-form-section">
+            <h3>Horario</h3>
+
+            <div className="gp-form-grid">
+              <div className="gp-form-field">
+                <label htmlFor="date">Fecha</label>
+                <input
+                  id="date"
+                  type="date"
+                  name="date"
+                  value={form.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="gp-form-field">
+                <label htmlFor="time">Hora</label>
+                <input
+                  id="time"
+                  type="time"
+                  name="time"
+                  value={form.time}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="gp-form-grid">
+              <div className="gp-form-field">
+                <label htmlFor="duration">Duración (min)</label>
+                <input
+                  id="duration"
+                  type="number"
+                  name="duration"
+                  placeholder="Ej. 45"
+                  value={form.duration}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="gp-form-field">
+                <label htmlFor="capacity">Capacidad</label>
+                <input
+                  id="capacity"
+                  type="number"
+                  name="capacity"
+                  placeholder="Ej. 20"
+                  value={form.capacity}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
           </div>
-          <div className="col-md-10">
-            <textarea className="form-control" name="description" value={form.description} onChange={handleChange} required />
+
+          <div className="gp-form-section">
+            <h3>Detalles</h3>
+
+            <div className="gp-form-grid">
+              <div className="gp-form-field">
+                <label htmlFor="level">Nivel</label>
+                <select
+                  id="level"
+                  name="level"
+                  value={form.level}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Selecciona un nivel</option>
+                  <option value="Principiante">Principiante</option>
+                  <option value="Intermedio">Intermedio</option>
+                  <option value="Avanzado">Avanzado</option>
+                </select>
+              </div>
+
+              <div className="gp-form-field">
+                <label htmlFor="location">Ubicación</label>
+                <input
+                  id="location"
+                  name="location"
+                  placeholder="Ubicación"
+                  value={form.location}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div className="gp-form-field">
+              <label htmlFor="image_url">URL de imagen o video</label>
+              <input
+                id="image_url"
+                name="image_url"
+                placeholder="Pega una URL de imagen o video"
+                value={form.image_url}
+                onChange={handleChange}
+              />
+            </div>
           </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Categoría</label>
+
+          <div className="gp-form-actions">
+            <button type="submit" className="gp-btn-primary" disabled={loading}>
+              {loading ? "Creando..." : "Crear clase"}
+            </button>
           </div>
-          <div className="col-md-10">
-            <select className="form-select" name="category" value={form.category} onChange={handleChange} required>
-              <option value="" disabled>Selecciona la categoría</option>
-              <option value="Clases de fuerza">Clases de fuerza</option>
-              <option value="Clases de mente, cuerpo y flexibilidad">Clases de mente, cuerpo y flexibilidad</option>
-              <option value="Clases de intervalos de alta intensidad">Clases de intervalos de alta intensidad</option>
-              <option value="Clases de ciclismo en interior">Clases de ciclismo en interior</option>
-              <option value="Clases especializadas">Clases especializadas</option>
-            </select>
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Fecha</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" type="date" name="date" value={form.date} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Hora</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" type="time" name="time" value={form.time} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Duración (minutos)</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" type="number" name="duration" value={form.duration} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Capacidad</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" type="number" name="capacity" value={form.capacity} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Nivel</label>
-          </div>
-          <div className="col-md-10">
-            <select className="form-select" name="level" value={form.level} onChange={handleChange} required>
-              <option value="" disabled>Selecciona el nivel</option>
-              <option value="Principiante">Principiante</option>
-              <option value="Intermedio">Intermedio</option>
-              <option value="Avanzado">Avanzado</option>
-            </select>
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">Ubicación</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" name="location" value={form.location} onChange={handleChange} />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-2">
-            <label className="form-label fw-bold">URL de Imagen/Video</label>
-          </div>
-          <div className="col-md-10">
-            <input className="form-control" name="image_url" value={form.image_url} onChange={handleChange} />
-          </div>
-        </div>
-        <div className="d-flex gap-2">
-          <button type="submit" className="btn btn-success flex-fill py-2" disabled={loading}>
-            {loading ? "Creando..." : "Crear Clase"}
-          </button>
-          <button type="button" className="btn btn-secondary flex-fill py-2" disabled={loading} onClick={() => navigate("/private")}>
-            Cancelar
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

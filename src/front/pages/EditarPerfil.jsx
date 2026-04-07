@@ -23,29 +23,30 @@ export const EditarPerfil = () => {
     useEffect(() => {
         const cargarPerfil = async () => {
             try {
-                const token = store.token || sessionStorage.getItem("token");
+                const token = store.token || localStorage.getItem("token") || sessionStorage.getItem("token");
+
                 if (!token) {
                     navigate("/login");
                     return;
                 }
 
                 const res = await fetch(`${backendUrl}/api/profile`, {
-                    headers: { "Authorization": `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
 
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.msg || "Error al cargar perfil");
 
-                const user = data.user;
+                const user = data.user || {};
+
                 setNombre(user.name || "");
                 setObjetivos(user.fitness_goals || "");
                 setNivel(user.fitness_level || "principiante");
                 setFechaNac(user.birth_date || "");
                 setTelefono(user.phone || "");
                 setFotoPreview(user.avatar_url || "");
-
-            } catch (error) {
-                setError(error.message);
+            } catch (err) {
+                setError(err.message || "No se pudo cargar el perfil");
             } finally {
                 setCargando(false);
             }
@@ -58,9 +59,10 @@ export const EditarPerfil = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+        const tiposPermitidos = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
+
         if (!tiposPermitidos.includes(file.type)) {
-            setError("Formato no permitido. Use JPG, PNG, GIF o WEBP");
+            setError("Formato no permitido. Usa JPG, PNG, GIF o WEBP");
             return;
         }
 
@@ -80,43 +82,28 @@ export const EditarPerfil = () => {
         setError("");
         setExito("");
 
-        if (fechaNac) {
-            const fechaSeleccionada = new Date(fechaNac);
-            const fechaActual = new Date();
-            const fechaMinima = new Date();
-            fechaMinima.setFullYear(fechaActual.getFullYear() - 120);
-
-            if (fechaSeleccionada > fechaActual) {
-                setError("La fecha de nacimiento no puede ser futura");
-                setGuardando(false);
-                return;
-            }
-
-            if (fechaSeleccionada < fechaMinima) {
-                setError("La fecha de nacimiento no puede ser hace más de 120 años");
-                setGuardando(false);
-                return;
-            }
-        }
-
         try {
-            const token = store.token || sessionStorage.getItem("token");
+            const token = store.token || localStorage.getItem("token") || sessionStorage.getItem("token");
+
+            if (!token) {
+                throw new Error("Sesión no válida");
+            }
 
             const formData = new FormData();
-            formData.append('name', nombre);
-            formData.append('fitness_goals', objetivos);
-            formData.append('fitness_level', nivel);
-            formData.append('birth_date', fechaNac);
-            formData.append('phone', telefono);
+            formData.append("name", nombre);
+            formData.append("fitness_goals", objetivos);
+            formData.append("fitness_level", nivel);
+            formData.append("birth_date", fechaNac);
+            formData.append("phone", telefono);
 
             if (fotoFile) {
-                formData.append('photo', fotoFile);
+                formData.append("photo", fotoFile);
             }
 
             const res = await fetch(`${backendUrl}/api/profile`, {
                 method: "PUT",
                 headers: {
-                    "Authorization": `Bearer ${token}`
+                    Authorization: `Bearer ${token}`
                 },
                 body: formData
             });
@@ -126,18 +113,11 @@ export const EditarPerfil = () => {
 
             setExito("Perfil actualizado correctamente");
 
-            if (data.user && data.user.avatar_url) {
-                setFotoPreview(data.user.avatar_url);
-            }
-
-            setFotoFile(null);
-
             setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-
-        } catch (error) {
-            setError("Error: " + error.message);
+                navigate("/perfil");
+            }, 1000);
+        } catch (err) {
+            setError(err.message || "No se pudo guardar el perfil");
         } finally {
             setGuardando(false);
         }
@@ -145,106 +125,130 @@ export const EditarPerfil = () => {
 
     if (cargando) {
         return (
-            <div className="container mt-5 text-center">
-                <div className="spinner-border text-primary"></div>
-                <p className="mt-2">Cargando...</p>
+            <div className="gp-list-page">
+                <div className="gp-list-shell">
+                    <div className="gp-empty-state gp-card">
+                        <div className="gp-list-spinner"></div>
+                        <p>Cargando perfil...</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="container mt-5 mb-5">
-            <div className="row justify-content-center">
-                <div className="col-md-8">
-                    <div className="card shadow">
-                        <div className="card-header bg-primary text-white py-3">
-                            <h4 className="mb-0">Editar Perfil</h4>
+        <div className="gp-list-page">
+            <div className="gp-list-shell">
+                <section className="gp-list-hero gp-card">
+                    <div>
+                        <div className="gp-eyebrow">PROFILE SETTINGS</div>
+                        <h1 className="gp-list-title">EDITAR PERFIL</h1>
+                        <p className="gp-list-subtitle">
+                            Actualiza tu identidad, datos personales y enfoque de entrenamiento.
+                        </p>
+                    </div>
+
+                    <div className="gp-list-hero-actions">
+                        <Link to="/perfil" className="gp-btn-secondary">
+                            Volver al perfil
+                        </Link>
+                    </div>
+                </section>
+
+                {error && <div className="gp-auth-error">{error}</div>}
+                {exito && <div className="gp-auth-success">{exito}</div>}
+
+                <form onSubmit={guardarCambios} className="gp-edit-profile-layout">
+                    <aside className="gp-edit-profile-side gp-card">
+                        <div className="gp-edit-profile-avatar-wrap">
+                            {fotoPreview ? (
+                                <img
+                                    src={fotoPreview}
+                                    alt="Perfil"
+                                    className="gp-edit-profile-avatar-image"
+                                />
+                            ) : (
+                                <div className="gp-edit-profile-avatar-fallback">
+                                    {(nombre || "U").charAt(0).toUpperCase()}
+                                </div>
+                            )}
                         </div>
 
-                        <div className="card-body p-4">
+                        <div className="gp-edit-profile-side-copy">
+                            <div className="gp-eyebrow">VISUAL IDENTITY</div>
+                            <h3>{nombre || "Tu perfil"}</h3>
+                            <p>
+                                Sube una foto y mantén tu identidad visual alineada con tu perfil.
+                            </p>
+                        </div>
 
-                            {error && <div className="alert alert-danger">{error}</div>}
-                            {exito && <div className="alert alert-success">{exito}</div>}
+                        <label className="gp-edit-profile-upload">
+                            <span>Cambiar foto</span>
+                            <input
+                                type="file"
+                                hidden
+                                accept="image/*"
+                                onChange={manejarSeleccionFoto}
+                            />
+                        </label>
 
-                            <form onSubmit={guardarCambios}>
-                                <div className="text-center mb-4">
-                                    <div className="position-relative d-inline-block">
-                                        {fotoPreview ? (
-                                            <img
-                                                src={fotoPreview}
-                                                alt="Perfil"
-                                                className="rounded-circle border"
-                                                style={{ width: "120px", height: "120px", objectFit: "cover" }}
-                                            />
-                                        ) : (
-                                            <div className="bg-light rounded-circle d-flex align-items-center justify-content-center border"
-                                                style={{ width: "120px", height: "120px" }}>
-                                                <i className="fas fa-user fa-3x text-secondary"></i>
-                                            </div>
-                                        )}
-                                        <label
-                                            htmlFor="fotoInput"
-                                            className="position-absolute bottom-0 end-0 bg-primary rounded-circle p-2"
-                                            style={{ cursor: "pointer" }}
-                                        >
-                                            <i className="fas fa-camera text-white"></i>
-                                        </label>
-                                    </div>
+                        <p className="gp-edit-profile-upload-note">
+                            JPG, PNG, GIF o WEBP · máximo 5MB
+                        </p>
+
+                        <div className="gp-edit-profile-side-stats">
+                            <div className="gp-edit-profile-stat">
+                                <span>Estado</span>
+                                <strong>Listo para actualizar</strong>
+                            </div>
+
+                            <div className="gp-edit-profile-stat">
+                                <span>Nivel actual</span>
+                                <strong>
+                                    {nivel === "principiante" && "Principiante"}
+                                    {nivel === "intermedio" && "Intermedio"}
+                                    {nivel === "avanzado" && "Avanzado"}
+                                </strong>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <section className="gp-edit-profile-main gp-card">
+                        <div className="gp-edit-profile-section">
+                            <div className="gp-eyebrow">PERSONAL DATA</div>
+                            <h3>Información principal</h3>
+
+                            <div className="gp-form-grid">
+                                <div className="gp-form-field">
+                                    <label>Nombre</label>
                                     <input
-                                        id="fotoInput"
-                                        type="file"
-                                        className="d-none"
-                                        accept="image/*"
-                                        onChange={manejarSeleccionFoto}
-                                    />
-                                    {fotoFile && (
-                                        <div className="mt-2">
-                                            <small className="text-success">
-                                                ✓ Foto seleccionada: {fotoFile.name}
-                                            </small>
-                                        </div>
-                                    )}
-                                    <small className="d-block text-muted mt-1">
-                                        JPG, PNG o GIF (max 5MB)
-                                    </small>
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Nombre</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
                                         value={nombre}
                                         onChange={(e) => setNombre(e.target.value)}
+                                        placeholder="Tu nombre"
                                     />
                                 </div>
 
-                                <div className="row mb-3">
-                                    <div className="col-md-6">
-                                        <label className="form-label fw-bold">Fecha nac.</label>
-                                        <input
-                                            type="date"
-                                            className="form-control"
-                                            value={fechaNac}
-                                            onChange={(e) => setFechaNac(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="col-md-6">
-                                        <label className="form-label fw-bold">Teléfono</label>
-                                        <input
-                                            type="tel"
-                                            className="form-control"
-                                            placeholder="+### ######"
-                                            value={telefono}
-                                            onChange={(e) => setTelefono(e.target.value)}
-                                        />
-                                    </div>
+                                <div className="gp-form-field">
+                                    <label>Teléfono</label>
+                                    <input
+                                        value={telefono}
+                                        onChange={(e) => setTelefono(e.target.value)}
+                                        placeholder="+57 300 000 0000"
+                                    />
                                 </div>
 
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Nivel</label>
+                                <div className="gp-form-field">
+                                    <label>Fecha de nacimiento</label>
+                                    <input
+                                        type="date"
+                                        value={fechaNac}
+                                        onChange={(e) => setFechaNac(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="gp-form-field">
+                                    <label>Nivel</label>
                                     <select
-                                        className="form-select"
                                         value={nivel}
                                         onChange={(e) => setNivel(e.target.value)}
                                     >
@@ -253,30 +257,38 @@ export const EditarPerfil = () => {
                                         <option value="avanzado">Avanzado</option>
                                     </select>
                                 </div>
-
-                                <div className="mb-4">
-                                    <label className="form-label fw-bold">Objetivos</label>
-                                    <textarea
-                                        className="form-control"
-                                        rows="3"
-                                        placeholder="Tus metas fitness..."
-                                        value={objetivos}
-                                        onChange={(e) => setObjetivos(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="d-flex gap-2">
-                                    <Link to="/private" className="btn btn-secondary flex-fill">
-                                        Volver
-                                    </Link>
-                                    <button type="submit" className="btn btn-primary flex-fill" disabled={guardando}>
-                                        {guardando ? "Guardando..." : "Guardar cambios"}
-                                    </button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                    </div>
-                </div>
+
+                        <div className="gp-edit-profile-section">
+                            <div className="gp-eyebrow">TRAINING FOCUS</div>
+                            <h3>Objetivos</h3>
+
+                            <div className="gp-form-field">
+                                <label>Metas fitness</label>
+                                <textarea
+                                    value={objetivos}
+                                    onChange={(e) => setObjetivos(e.target.value)}
+                                    placeholder="Ej: ganar masa muscular, mejorar resistencia, bajar porcentaje de grasa..."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="gp-edit-profile-actions">
+                            <Link to="/perfil" className="gp-edit-profile-btn gp-edit-profile-btn-secondary">
+                                Cancelar
+                            </Link>
+
+                            <button
+                                type="submit"
+                                className="gp-edit-profile-btn gp-edit-profile-btn-primary"
+                                disabled={guardando}
+                            >
+                                {guardando ? "Guardando..." : "Guardar cambios"}
+                            </button>
+                        </div>
+                    </section>
+                </form>
             </div>
         </div>
     );

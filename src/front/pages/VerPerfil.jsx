@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-
-
 export const VerPerfil = () => {
     const navigate = useNavigate();
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -13,14 +11,16 @@ export const VerPerfil = () => {
     useEffect(() => {
         const cargarPerfil = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token =
+                    localStorage.getItem("token") || sessionStorage.getItem("token");
+
                 if (!token) {
                     navigate("/login");
                     return;
                 }
 
                 const res = await fetch(`${backendUrl}/api/profile`, {
-                    headers: { "Authorization": `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
 
                 const data = await res.json();
@@ -38,119 +38,150 @@ export const VerPerfil = () => {
 
     if (cargando) {
         return (
-            <div className="container mt-5 text-center">
-                <div className="spinner-border text-primary"></div>
-                <p className="mt-2">Cargando perfil</p>
+            <div className="gp-list-page">
+                <div className="gp-list-shell">
+                    <div className="gp-empty-state gp-card">
+                        <div className="gp-list-spinner"></div>
+                        <p>Cargando perfil...</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="container mt-5">
-                <div className="alert alert-danger">{error}</div>
-                <Link to="/private" className="btn btn-primary">Volver</Link>
+            <div className="gp-list-page">
+                <div className="gp-list-shell">
+                    <div className="gp-auth-error">{error}</div>
+                    <Link to="/private" className="gp-btn-secondary">Volver</Link>
+                </div>
             </div>
         );
     }
-
-
-
 
     if (!user) {
         return (
-            <div className="container mt-5">
-                <div className="alert alert-warning">No se pudo cargar el perfil</div>
-                <Link to="/private" className="btn btn-primary">Volver</Link>
+            <div className="gp-list-page">
+                <div className="gp-list-shell">
+                    <div className="gp-auth-error">No se pudo cargar el perfil</div>
+                    <Link to="/private" className="gp-btn-secondary">Volver</Link>
+                </div>
             </div>
         );
     }
 
-
-
-
     return (
-        <div className="container-fluid py-5">
-            <div className="row justify-content-center">
-                <div className="col-12 col-lg-10">
-                    <div className="bg-white rounded-4 p-4 p-lg-5 shadow-sm">
-                        <div className="text-center mb-5">
+        <div className="gp-list-page">
+            <div className="gp-list-shell">
+                <section className="gp-list-hero gp-card">
+                    <div>
+                        <div className="gp-eyebrow">PROFILE</div>
+                        <h1 className="gp-list-title">MI PERFIL</h1>
+                        <p className="gp-list-subtitle">
+                            Consulta tu información personal y tu configuración de entrenamiento.
+                        </p>
+                    </div>
+
+                    <div className="gp-list-hero-actions">
+                        <Link to="/editar-perfil" className="gp-btn-primary">
+                            Editar perfil
+                        </Link>
+                        <Link to="/private" className="gp-btn-secondary">
+                            Volver
+                        </Link>
+                    </div>
+                </section>
+
+                <section className="gp-profile-grid">
+                    <article className="gp-profile-main gp-card">
+                        <div className="gp-profile-header">
                             {user.avatar_url ? (
                                 <img
                                     src={user.avatar_url}
                                     alt="Avatar"
-                                    className="rounded-circle"
-                                    style={{ width: "120px", height: "120px", objectFit: "cover" }}
+                                    className="gp-profile-avatar-image"
                                 />
                             ) : (
-                                <div className="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto"
-                                    style={{ width: "120px", height: "120px" }}>
-                                    <i className="fas fa-user fa-3x text-secondary"></i>
+                                <div className="gp-profile-avatar-fallback">
+                                    {(user.name || user.email || "U").charAt(0).toUpperCase()}
                                 </div>
                             )}
-                            <h2 className="mt-3 mb-1">{user.name || user.email}</h2>
-                            <p className="text-muted">{user.role === "trainer" ? "Entrenador" : "Usuario"}</p>
+
+                            <div>
+                                <h2>{user.name || user.email}</h2>
+                                <p>{user.role === "trainer" ? "Entrenador" : "Usuario"}</p>
+                            </div>
                         </div>
 
-                        <div className="row g-4">
-                            <div className="col-md-6">
-                                <div className="border-bottom pb-2 mb-3">
-                                    <small className="text-muted text-uppercase">Información personal</small>
+                        <div className="gp-profile-section">
+                            <div className="gp-eyebrow">INFORMACIÓN PERSONAL</div>
+
+                            <div className="gp-profile-info-grid">
+                                <div className="gp-profile-info-card">
+                                    <span>Nombre completo</span>
+                                    <strong>{user.name || "No especificado"}</strong>
                                 </div>
-                                <div className="mb-3">
-                                    <label className="text-muted small d-block">Nombre completo</label>
-                                    <p className="fs-5 mb-0">{user.name || "No especificado"}</p>
+
+                                <div className="gp-profile-info-card">
+                                    <span>Email</span>
+                                    <strong>{user.email}</strong>
                                 </div>
-                                <div className="mb-3">
-                                    <label className="text-muted small d-block">Email</label>
-                                    <p className="fs-5 mb-0">{user.email}</p>
+
+                                <div className="gp-profile-info-card">
+                                    <span>Teléfono</span>
+                                    <strong>{user.phone || "No especificado"}</strong>
                                 </div>
-                                <div className="mb-3">
-                                    <label className="text-muted small d-block">Teléfono</label>
-                                    <p className="fs-5 mb-0">{user.phone || "No especificado"}</p>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="text-muted small d-block">Fecha de nacimiento</label>
-                                    <p className="fs-5 mb-0">{user.birth_date || "No especificado"}</p>
+
+                                <div className="gp-profile-info-card">
+                                    <span>Fecha de nacimiento</span>
+                                    <strong>{user.birth_date || "No especificado"}</strong>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="col-md-6">
-                                <div className="border-bottom pb-2 mb-3">
-                                    <small className="text-muted text-uppercase">Información de entrenamiento</small>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="text-muted small d-block">Nivel</label>
-                                    <p className="fs-5 mb-0">
+                        <div className="gp-profile-section">
+                            <div className="gp-eyebrow">ENTRENAMIENTO</div>
+
+                            <div className="gp-profile-info-grid">
+                                <div className="gp-profile-info-card">
+                                    <span>Nivel</span>
+                                    <strong>
                                         {user.fitness_level === "principiante" && "Principiante"}
                                         {user.fitness_level === "intermedio" && "Intermedio"}
                                         {user.fitness_level === "avanzado" && "Avanzado"}
                                         {!user.fitness_level && "Principiante"}
-                                    </p>
+                                    </strong>
                                 </div>
-                                <div className="mb-3">
-                                    <label className="text-muted small d-block">Objetivos</label>
-                                    <p className="fs-5 mb-0">{user.fitness_goals || "No has establecido objetivos"}</p>
+
+                                <div className="gp-profile-info-card">
+                                    <span>Objetivos</span>
+                                    <strong>{user.fitness_goals || "No has establecido objetivos"}</strong>
                                 </div>
                             </div>
                         </div>
+                    </article>
 
-                        <div className="d-flex gap-3 mt-5 pt-3">
-                            <Link to="/editar-perfil" className="btn btn-primary flex-fill py-2 rounded-pill">
-                                <i className="fas fa-edit me-2"></i>
-                                Editar Perfil
+                    <aside className="gp-profile-side gp-card">
+                        <div className="gp-eyebrow">ACCESOS</div>
+                        <h3>Gestión rápida</h3>
+                        <p>Actualiza tu información o revisa tu historial de clases.</p>
+
+                        <div className="gp-profile-actions">
+                            <Link to="/editar-perfil" className="gp-btn-primary">
+                                Editar perfil
                             </Link>
-                            <Link to="/historial-clases" className="btn btn-outline-info flex-fill py-2 rounded-pill">
-                                <i className="fas fa-history me-2"></i>
-                                Historial de Clases
+
+                            <Link to="/historial-clases" className="gp-btn-secondary">
+                                Historial de clases
                             </Link>
-                            <Link to="/private" className="btn btn-outline-secondary flex-fill py-2 rounded-pill">
-                                <i className="fas fa-arrow-left me-2"></i>
-                                Volver
+
+                            <Link to="/private" className="gp-btn-secondary">
+                                Volver al dashboard
                             </Link>
                         </div>
-                    </div>
-                </div>
+                    </aside>
+                </section>
             </div>
         </div>
     );
