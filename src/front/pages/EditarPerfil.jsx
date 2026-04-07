@@ -12,7 +12,8 @@ export const EditarPerfil = () => {
     const [nivel, setNivel] = useState("principiante");
     const [fechaNac, setFechaNac] = useState("");
     const [telefono, setTelefono] = useState("");
-    const [foto, setFoto] = useState("");
+    const [fotoPreview, setFotoPreview] = useState("");
+    const [fotoFile, setFotoFile] = useState(null);
 
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
@@ -41,7 +42,7 @@ export const EditarPerfil = () => {
                 setNivel(user.fitness_level || "principiante");
                 setFechaNac(user.birth_date || "");
                 setTelefono(user.phone || "");
-                setFoto(user.avatar_url || "");
+                setFotoPreview(user.avatar_url || "");
 
             } catch (error) {
                 setError(error.message);
@@ -53,38 +54,90 @@ export const EditarPerfil = () => {
         cargarPerfil();
     }, [backendUrl, navigate, store.token]);
 
+    const manejarSeleccionFoto = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+        if (!tiposPermitidos.includes(file.type)) {
+            setError("Formato no permitido. Use JPG, PNG, GIF o WEBP");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setError("La imagen no debe superar 5MB");
+            return;
+        }
+
+        setFotoFile(file);
+        setFotoPreview(URL.createObjectURL(file));
+        setError("");
+    };
+
     const guardarCambios = async (e) => {
         e.preventDefault();
         setGuardando(true);
         setError("");
         setExito("");
 
+        if (fechaNac) {
+            const fechaSeleccionada = new Date(fechaNac);
+            const fechaActual = new Date();
+            const fechaMinima = new Date();
+            fechaMinima.setFullYear(fechaActual.getFullYear() - 120);
+
+            if (fechaSeleccionada > fechaActual) {
+                setError("La fecha de nacimiento no puede ser futura");
+                setGuardando(false);
+                return;
+            }
+
+            if (fechaSeleccionada < fechaMinima) {
+                setError("La fecha de nacimiento no puede ser hace más de 120 años");
+                setGuardando(false);
+                return;
+            }
+        }
+
         try {
             const token = store.token || sessionStorage.getItem("token");
+
+            const formData = new FormData();
+            formData.append('name', nombre);
+            formData.append('fitness_goals', objetivos);
+            formData.append('fitness_level', nivel);
+            formData.append('birth_date', fechaNac);
+            formData.append('phone', telefono);
+
+            if (fotoFile) {
+                formData.append('photo', fotoFile);
+            }
 
             const res = await fetch(`${backendUrl}/api/profile`, {
                 method: "PUT",
                 headers: {
-                    "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    name: nombre,
-                    fitness_goals: objetivos,
-                    fitness_level: nivel,
-                    birth_date: fechaNac,
-                    phone: telefono,
-                    avatar_url: foto
-                })
+                body: formData
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.msg || "Error al guardar");
+            if (!res.ok) throw new Error(data.error || data.msg || "Error al guardar");
 
-            setExito("Perfil actualizado");
+            setExito("Perfil actualizado correctamente");
+
+            if (data.user && data.user.avatar_url) {
+                setFotoPreview(data.user.avatar_url);
+            }
+
+            setFotoFile(null);
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
 
         } catch (error) {
-            setError("Error " + error.message);
+            setError("Error: " + error.message);
         } finally {
             setGuardando(false);
         }
@@ -113,27 +166,47 @@ export const EditarPerfil = () => {
                             {error && <div className="alert alert-danger">{error}</div>}
                             {exito && <div className="alert alert-success">{exito}</div>}
 
-                            {foto && (
-                                <div className="text-center mb-4">
-                                    <img
-                                        src={foto}
-                                        alt="Perfil"
-                                        className="rounded-circle border"
-                                        style={{ width: "120px", height: "120px", objectFit: "cover" }}
-                                    />
-                                </div>
-                            )}
-
                             <form onSubmit={guardarCambios}>
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Foto URL</label>
+                                <div className="text-center mb-4">
+                                    <div className="position-relative d-inline-block">
+                                        {fotoPreview ? (
+                                            <img
+                                                src={fotoPreview}
+                                                alt="Perfil"
+                                                className="rounded-circle border"
+                                                style={{ width: "120px", height: "120px", objectFit: "cover" }}
+                                            />
+                                        ) : (
+                                            <div className="bg-light rounded-circle d-flex align-items-center justify-content-center border"
+                                                style={{ width: "120px", height: "120px" }}>
+                                                <i className="fas fa-user fa-3x text-secondary"></i>
+                                            </div>
+                                        )}
+                                        <label
+                                            htmlFor="fotoInput"
+                                            className="position-absolute bottom-0 end-0 bg-primary rounded-circle p-2"
+                                            style={{ cursor: "pointer" }}
+                                        >
+                                            <i className="fas fa-camera text-white"></i>
+                                        </label>
+                                    </div>
                                     <input
-                                        type="url"
-                                        className="form-control"
-                                        placeholder="https://ejemplo.com/foto.jpg"
-                                        value={foto}
-                                        onChange={(e) => setFoto(e.target.value)}
+                                        id="fotoInput"
+                                        type="file"
+                                        className="d-none"
+                                        accept="image/*"
+                                        onChange={manejarSeleccionFoto}
                                     />
+                                    {fotoFile && (
+                                        <div className="mt-2">
+                                            <small className="text-success">
+                                                ✓ Foto seleccionada: {fotoFile.name}
+                                            </small>
+                                        </div>
+                                    )}
+                                    <small className="d-block text-muted mt-1">
+                                        JPG, PNG o GIF (max 5MB)
+                                    </small>
                                 </div>
 
                                 <div className="mb-3">
