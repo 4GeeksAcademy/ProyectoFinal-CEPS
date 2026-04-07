@@ -2,6 +2,7 @@ from flask import request, jsonify, Blueprint
 from api.models import db, User, GymClass, Routine, Favorites_Routines, Favorites_Classes, Assigned_Routines, Assigned_Classes, Exercise
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from api.cloudinary_helper import subir_imagen_perfil, obtener_url_imagen
 
 api = Blueprint("api", __name__)
 CORS(api)
@@ -279,7 +280,7 @@ def my_routines():
 
     if not current_user:
         return jsonify({"msg": "Usuario no encontrado"}), 404
-  
+
     if current_user.role != "trainer":
         return jsonify({"msg": "Solo los entrenadores pueden ver sus rutinas"}), 403
 
@@ -381,7 +382,15 @@ def get_profile():
     if not user:
         return jsonify({"msg": "Usuario no encontrado"}), 404
 
-    return jsonify({"user": user.serialize()}), 200
+    user_data = user.serialize()
+
+    if user.avatar_url:
+        from api.cloudinary_helper import obtener_url_imagen
+        user_data['avatar_url'] = obtener_url_imagen(user.avatar_url, 200, 200)
+    else:
+        user_data['avatar_url'] = None
+
+    return jsonify({"user": user_data}), 200
 
 
 @api.route("/profile", methods=["PUT"])
@@ -393,34 +402,56 @@ def update_profile():
     if not user:
         return jsonify({"msg": "Usuario no encontrado"}), 404
 
-    body = request.get_json()
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        if 'name' in request.form:
+            user.name = request.form.get('name')
+        if 'fitness_goals' in request.form:
+            user.fitness_goals = request.form.get('fitness_goals')
+        if 'fitness_level' in request.form:
+            user.fitness_level = request.form.get('fitness_level')
+        if 'birth_date' in request.form:
+            user.birth_date = request.form.get('birth_date')
+        if 'phone' in request.form:
+            user.phone = request.form.get('phone')
 
-    if not body:
-        return jsonify({"msg": "Body vacío"}), 400
+        if 'photo' in request.files:
+            file = request.files['photo']
+            if file and file.filename:
+                try:
+                    from api.cloudinary_helper import subir_imagen_perfil
+                    public_id = subir_imagen_perfil(file, user.id)
+                    user.avatar_url = public_id
+                except Exception as e:
+                    return jsonify({"error": f"Error al subir foto: {str(e)}"}), 500
 
-    if "name" in body:
-        user.name = body.get("name")
-
-    if "fitness_goals" in body:
-        user.fitness_goals = body.get("fitness_goals")
-
-    if "fitness_level" in body:
-        user.fitness_level = body.get("fitness_level")
-
-    if "birth_date" in body:
-        user.birth_date = body.get("birth_date")
-
-    if "phone" in body:
-        user.phone = body.get("phone")
-
-    if "avatar_url" in body:
-        user.avatar_url = body.get("avatar_url")
+    else:
+        body = request.get_json()
+        if body:
+            if "name" in body:
+                user.name = body.get("name")
+            if "fitness_goals" in body:
+                user.fitness_goals = body.get("fitness_goals")
+            if "fitness_level" in body:
+                user.fitness_level = body.get("fitness_level")
+            if "birth_date" in body:
+                user.birth_date = body.get("birth_date")
+            if "phone" in body:
+                user.phone = body.get("phone")
+            if "avatar_url" in body:
+                user.avatar_url = body.get("avatar_url")
 
     db.session.commit()
 
+    from api.cloudinary_helper import obtener_url_imagen
+    avatar_url_real = obtener_url_imagen(
+        user.avatar_url, 200, 200) if user.avatar_url else None
+
+    user_data = user.serialize()
+    user_data['avatar_url'] = avatar_url_real
+
     return jsonify({
         "msg": "Perfil actualizado",
-        "user": user.serialize()
+        "user": user_data
     }), 200
 
 
@@ -839,3 +870,52 @@ def delete_exercise(exercise_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Error al eliminar el ejercicio", "error": str(e)}), 500
+
+
+@api.route("/profile/upload-photo", methods=["POST"])
+@jwt_required()
+def upload_profile_photo():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    if 'photo' not in request.files:
+        return jsonify({"error": "No se encontró el archivo"}), 400
+
+    file = request.files['photo']
+
+    if file.filename == '':
+        return jsonify({"error": "No se seleccionó ningún archivo"}), 400
+
+    allowed_types = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    file_extension = file.filename.rsplit('.', 1)[1].lower()
+
+    if file_extension not in allowed_types:
+        return jsonify({"error": f"Formato no permitido. Use: {', '.join(allowed_types)}"}), 400
+
+    file.seek(0, 2)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > 5 * 1024 * 1024:
+        return jsonify({"error": "La imagen no debe superar los 5MB"}), 400
+
+    try:
+        public_id = subir_imagen_perfil(file, user.id)
+        user.avatar_url = public_id
+        db.session.commit()
+
+        img_url = obtener_url_imagen(public_id, 200, 200)
+
+        return jsonify({
+            "success": True,
+            "public_id": public_id,
+            "url": img_url,
+            "message": "Foto de perfil actualizada"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
