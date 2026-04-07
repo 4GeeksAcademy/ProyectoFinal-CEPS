@@ -2,13 +2,37 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
+const muscleGroupLabels = {
+    chest: "Pecho",
+    legs: "Piernas",
+    back: "Espalda",
+    shoulders: "Hombros",
+    arms: "Brazos",
+    core: "Abdomen"
+};
+
+// Función para convertir de español a inglés para el filtro
+const getEnglishMuscleGroup = (spanishValue) => {
+    const reverseLabels = {
+        "Pecho": "chest",
+        "Piernas": "legs",
+        "Espalda": "back",
+        "Hombros": "shoulders",
+        "Brazos": "arms",
+        "Abdomen": "core",
+        "Todos": "all"
+    };
+    return reverseLabels[spanishValue] || spanishValue;
+};
+
 export const Routines = () => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const [routines, setRoutines] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
+    const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("Todos");
     const [favoriteRoutines, setFavoriteRoutines] = useState([]);
+    const [deletingRoutineId, setDeletingRoutineId] = useState(null);
     const { store } = useGlobalReducer();
     const { token, user } = store;
 
@@ -79,12 +103,35 @@ export const Routines = () => {
         }
     };
 
+    const handleDeleteRoutine = async (routineId) => {
+        if (!window.confirm("¿Está seguro de eliminar esta rutina? Esta acción no se puede deshacer.")) return;
+
+        try {
+            setDeletingRoutineId(routineId);
+            const response = await fetch(`${backendUrl}/api/routines/${routineId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.msg || "Error al eliminar la rutina");
+            setRoutines(routines.filter((item) => item.id !== routineId));
+            alert("Rutina eliminada exitosamente");
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setDeletingRoutineId(null);
+        }
+    };
+
     const filteredRoutines =
-        selectedMuscleGroup === "all"
+        selectedMuscleGroup === "Todos"
             ? routines
             : routines.filter((item) => {
                 const muscle = item.muscle_group?.toLowerCase().trim();
-                return muscle === selectedMuscleGroup;
+                const englishValue = getEnglishMuscleGroup(selectedMuscleGroup);
+                return muscle === englishValue;
             });
 
     if (loading) {
@@ -116,13 +163,13 @@ export const Routines = () => {
                     value={selectedMuscleGroup}
                     onChange={(e) => setSelectedMuscleGroup(e.target.value)}
                 >
-                    <option value="all">Todos</option>
-                    <option value="chest">Pecho</option>
-                    <option value="legs">Piernas</option>
-                    <option value="back">Espalda</option>
-                    <option value="shoulders">Hombros</option>
-                    <option value="arms">Brazos</option>
-                    <option value="core">Core</option>
+                    <option value="Todos">Todos</option>
+                    <option value="Pecho">Pecho</option>
+                    <option value="Piernas">Piernas</option>
+                    <option value="Espalda">Espalda</option>
+                    <option value="Hombros">Hombros</option>
+                    <option value="Brazos">Brazos</option>
+                    <option value="Abdomen">Abdomen</option>
                 </select>
             </div>
 
@@ -163,15 +210,31 @@ export const Routines = () => {
                                     <p><strong>Nivel:</strong> {item.level}</p>
                                     <p>
                                         <strong>Grupo muscular:</strong>{" "}
-                                        {item.muscle_group || "No especificado"}
+                                        {muscleGroupLabels[item.muscle_group] || item.muscle_group || "No especificado"}
                                     </p>
                                     <p><strong>Entrenador:</strong> {item.trainer_email}</p>
-                                    <Link
-                                        to={`/routines/${item.id}`}
-                                        className="btn btn-outline-primary"
-                                    >
-                                        Ver detalles
-                                    </Link>
+                                    <div className="d-flex gap-2 align-items-center">
+                                        <Link
+                                            to={`/routines/${item.id}`}
+                                            className="btn btn-outline-primary"
+                                        >
+                                            Ver detalles
+                                        </Link>
+                                        {user?.role === "trainer" && Number(user?.id) === item.trainer_id && (
+                                            <>
+                                                <Link to={`/routines/${item.id}/edit`} className="btn btn-sm btn-warning">
+                                                    Editar
+                                                </Link>
+                                                <button
+                                                    className="btn btn-sm btn-danger"
+                                                    onClick={() => handleDeleteRoutine(item.id)}
+                                                    disabled={deletingRoutineId === item.id}
+                                                >
+                                                    {deletingRoutineId === item.id ? "Eliminando..." : "Eliminar"}
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

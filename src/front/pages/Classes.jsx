@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
 const getYouTubeThumbnail = (url) => {
   if (!url) return null;
@@ -11,10 +12,13 @@ const getYouTubeThumbnail = (url) => {
 
 export const Classes = () => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const { store } = useGlobalReducer();
+  const token = store.token;
 
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingClassId, setDeletingClassId] = useState(null);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -63,6 +67,32 @@ export const Classes = () => {
     fetchClasses();
     fetchUser();
   }, [backendUrl]);
+
+  const handleDeleteClass = async (classId) => {
+    if (!window.confirm("¿Está seguro de eliminar esta clase? Esta acción no se puede deshacer.")) return;
+
+    try {
+      setDeletingClassId(classId);
+      setError("");
+
+      const response = await fetch(`${backendUrl}/api/classes/${classId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.msg || "Error al eliminar la clase");
+
+      setClasses(classes.filter((item) => item.id !== classId));
+      alert("Clase eliminada exitosamente");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingClassId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -125,13 +155,27 @@ export const Classes = () => {
                     {(item.available_slots ?? item.capacity) > 0 ? "Disponible" : "Clase llena"}
                   </span>
 
-                  <div>
+                  <div className="d-flex gap-2 align-items-center">
                     <Link
                       to={`/classes/${item.id}`}
                       className="btn btn-outline-primary"
                     >
                       Ver detalles
                     </Link>
+                    {user?.role === "trainer" && Number(user?.id) === item.trainer_id && (
+                      <>
+                        <Link to={`/classes/${item.id}/edit`} className="btn btn-sm btn-warning">
+                          Editar
+                        </Link>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDeleteClass(item.id)}
+                          disabled={deletingClassId === item.id}
+                        >
+                          {deletingClassId === item.id ? "Eliminando..." : "Eliminar"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

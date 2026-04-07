@@ -112,7 +112,7 @@ export const RoutineDetails = () => {
           {Array.isArray(routine.exercises) ? (
             <ul className="list-group mb-3">
               {routine.exercises.map(ex => (
-                <li key={ex.id} className="list-group-item d-flex align-items-start gap-3">
+                <Link key={ex.id} to={`/exercises/${ex.id}?from=routine`} className="list-group-item d-flex align-items-start gap-3 text-decoration-none">
                   {ex.image_url && (
                     <img
                       src={ex.image_url}
@@ -122,13 +122,11 @@ export const RoutineDetails = () => {
                     />
                   )}
                   <div>
-                    <h5 className="mb-1">
-                      <Link to={`/exercises/${ex.id}`} className="text-decoration-none">{ex.name}</Link>
-                    </h5>
+                    <h5 className="mb-1">{ex.name}</h5>
                     <p className="text-muted mb-1">Zona: {ex.zone}</p>
                     <p className="mb-0 mt-1 small"><strong>Ejecución:</strong> {ex.execution}</p>
                   </div>
-                </li>
+                </Link>
               ))}
             </ul>
           ) : (
