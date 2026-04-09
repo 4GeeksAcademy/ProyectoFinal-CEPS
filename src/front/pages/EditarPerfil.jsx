@@ -197,10 +197,6 @@ export const EditarPerfil = () => {
                         </p>
 
                         <div className="gp-edit-profile-side-stats">
-                            <div className="gp-edit-profile-stat">
-                                <span>Estado</span>
-                                <strong>Listo para actualizar</strong>
-                            </div>
 
                             <div className="gp-edit-profile-stat">
                                 <span>Nivel actual</span>

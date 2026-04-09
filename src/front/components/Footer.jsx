@@ -8,9 +8,6 @@ export const Footer = () => {
 				<div className="gp-footer-minimal-brand">GymPlanner</div>
 
 				<div className="gp-footer-minimal-links">
-					<Link to="/classes">Clases</Link>
-					<Link to="/routines">Rutinas</Link>
-					<Link to="/private">Dashboard</Link>
 				</div>
 
 				<div className="gp-footer-minimal-copy">
