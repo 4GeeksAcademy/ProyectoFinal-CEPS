@@ -36,10 +36,11 @@ bcrypt.init_app(app)
 jwt = JWTManager(app)
 
 frontend_url = os.getenv("VITE_FRONTEND_URL", "")
+allowed_origins = [frontend_url] if frontend_url else "*"
 
 CORS(
     app,
-    origins=[frontend_url] if frontend_url else "*",
+    resources={r"/api/*": {"origins": allowed_origins}},
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     supports_credentials=False

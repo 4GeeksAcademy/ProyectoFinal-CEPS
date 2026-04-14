@@ -13,12 +13,10 @@ services:
         fromDatabase:
           name: gym-planner-db
           property: connectionString
-      - key: FLASK_APP_KEY
-        generateValue: true
-      - key: FLASK_APP
-        value: src/app.py
-      - key: FLASK_DEBUG
-        value: "0"
+      - key: VITE_BACKEND_URL
+        value: https://backendgymplanner.onrender.com
+      - key: VITE_FRONTEND_URL
+        value: https://proyectofinal-ceps.onrender.com
 
 databases:
   - name: gym-planner-db
