@@ -1,11 +1,9 @@
 from flask import request, jsonify, Blueprint
 from api.models import db, User, GymClass, Routine, Favorites_Routines, Favorites_Classes, Assigned_Routines, Assigned_Classes, Exercise
-from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from api.cloudinary_helper import subir_imagen_perfil, obtener_url_imagen
 
 api = Blueprint("api", __name__)
-CORS(api)
 
 
 def get_current_user():
