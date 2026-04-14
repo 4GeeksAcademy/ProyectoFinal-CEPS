@@ -39,7 +39,7 @@ frontend_url = os.getenv("VITE_FRONTEND_URL", "")
 
 CORS(
     app,
-    origins=[frontend_url] if frontend_url else "*",
+    origins=["https://proyectofinal-ceps.onrender.com"],
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     supports_credentials=False

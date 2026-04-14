@@ -26,7 +26,7 @@ services:
           name: postgresql-trapezoidal-42170
           property: connectionString
       - key: VITE_BACKEND_URL
-        value: https://gymplanner-xxum.onrender.com
+        value: https://backendgymplanner.onrender.com
       - key: VITE_FRONTEND_URL
         value: https://proyectofinal-ceps.onrender.com
 
