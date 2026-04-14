@@ -35,7 +35,7 @@ db.init_app(app)
 bcrypt.init_app(app)
 jwt = JWTManager(app)
 
-frontend_url = os.getenv("VITE_BACKEND_URL", "").replace("-3001.", "-3000.")
+frontend_url = os.getenv("VITE_FRONTEND_URL", "")
 
 CORS(
     app,
